@@ -1,6 +1,5 @@
 .idea
 venv
-tasks.txt
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
