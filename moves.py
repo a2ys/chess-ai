@@ -1,8 +1,10 @@
+import board
 from defs import const
-from piece import King, Queen, Bishop, Knight, Rook, Pawn, WhiteSpace
+from main import Main
+from piece import Piece, King, Queen, Bishop, Knight, Rook, Pawn, WhiteSpace
 
 
-def diagonal_moves(rank, file, m_arg_board):
+def diagonal_moves(rank: int, file: int, m_arg_board: list) -> list:
     moves = []
 
     for i in range(rank + 1, 8):
@@ -48,7 +50,7 @@ def diagonal_moves(rank, file, m_arg_board):
     return moves
 
 
-def straight_moves(rank, file, m_arg_board):
+def straight_moves(rank: int, file: int, m_arg_board: list) -> list:
     moves = []
 
     for i in range(rank + 1, 8):
@@ -90,7 +92,7 @@ def straight_moves(rank, file, m_arg_board):
     return moves
 
 
-def pawn_moves(rank, file, m_arg_board):
+def pawn_moves(rank: int, file: int, m_arg_board: list) -> list:
     moves = []
 
     if m_arg_board[rank][file].get_color() == "white":
@@ -125,7 +127,7 @@ def pawn_moves(rank, file, m_arg_board):
     return moves
 
 
-def knight_moves(rank, file, m_arg_board):
+def knight_moves(rank: int, file: int, m_arg_board: list) -> list:
     moves = []
 
     if file + 2 <= 7:
@@ -176,7 +178,7 @@ def knight_moves(rank, file, m_arg_board):
     return moves
 
 
-def king_moves(rank, file, m_arg_board):
+def king_moves(rank: int, file: int, m_arg_board: list) -> list:
     moves = []
 
     if file + 1 <= 7:
@@ -225,11 +227,11 @@ def king_moves(rank, file, m_arg_board):
     return moves
 
 
-def queen_moves(rank, file, m_arg_board):
+def queen_moves(rank: int, file: int, m_arg_board: list) -> list:
     return straight_moves(rank, file, m_arg_board) + diagonal_moves(rank, file, m_arg_board)
 
 
-def legal_moves(piece, arg_board):
+def legal_moves(piece: Piece, arg_board: list) -> list:
     if isinstance(piece, King.King):
         moves = []
         for move in king_moves(piece.get_rank(), piece.get_file(), arg_board):

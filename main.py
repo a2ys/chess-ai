@@ -9,7 +9,7 @@ import board
 
 
 # This function loads the images to the app on runtime.
-def load_images():
+def load_images() -> None:
     pieces = ['wp', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bp', 'bR', 'bN', 'bB', 'bQ', 'bK']
     for piece in pieces:
         IMAGES[piece] = pygame.image.load('assets/images/' + piece + '.png')
@@ -17,20 +17,20 @@ def load_images():
 
 
 # This function draws the squares on the board.py.
-def draw_squares(screen):
+def draw_squares(screen: pygame.display) -> None:
     for i in range(DIMENSION):
         for j in range(DIMENSION):
             pygame.draw.rect(screen, board_colors[i][j], (j * SQ_SIZE, i * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
-def reset_colors():
+def reset_colors() -> None:
     for i in range(DIMENSION):
         for j in range(DIMENSION):
             board_colors[i][j] = original_colors[i][j]
 
 
 # This function draws the pieces on the board.py depending on the board.py argument passed.
-def draw_pieces(screen, arg_board):
+def draw_pieces(screen: pygame.display, arg_board: list) -> None:
     for i in range(DIMENSION):
         for j in range(DIMENSION):
             piece = arg_board[i][j]
@@ -39,13 +39,13 @@ def draw_pieces(screen, arg_board):
 
 
 # This function integrates draw_squares() method and draw_pieces() method as a single function.
-def draw_game_state(screen, gs):
+def draw_game_state(screen: pygame.display, gs: board.GameState) -> None:
     draw_squares(screen)
     draw_pieces(screen, gs.board)
 
 
 class Main:
-    def __init__(self):
+    def __init__(self) -> None:
         pygame.init()
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.screen.fill((255, 255, 255))
@@ -56,15 +56,13 @@ class Main:
         self.gs = board.GameState()
         load_images()
 
-    def mainloop(self):
+    def mainloop(self) -> int:
         square_selected = ()
         player_clicks = []
 
-        running = True
-        while running:
+        while True:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
-                    running = False
                     return 0
                 elif event.type == pygame.MOUSEBUTTONDOWN:
                     pos = pygame.mouse.get_pos()  # (x, y) location of mouse click
@@ -90,8 +88,6 @@ class Main:
                         else:
                             player_clicks.append((rank, file))
 
-                            self.gs.illegal_moves(self.gs.board[rank][file])
-
                             if (rank + file) % 2 == 0:
                                 board_colors[rank][file] = highlight_colors[0]
                             else:
@@ -99,7 +95,8 @@ class Main:
                             # Highlight the legal moves of the selected piece.
                             if self.gs.board[rank][file].get_color() == self.gs.active_player():
                                 pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                for i in legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])):
+                                lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                                for i in lgl_moves:
                                     moves_to_position = get_move_from_id(i)
                                     target_rank = moves_to_position[1][0]
                                     target_file = moves_to_position[1][1]
@@ -114,7 +111,8 @@ class Main:
                         # Highlight the legal moves of the selected piece.
                         if self.gs.board[rank][file].get_color() == self.gs.active_player():
                             pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                            for i in legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])):
+                            lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                            for i in lgl_moves:
                                 moves_to_position = get_move_from_id(i)
                                 target_rank = moves_to_position[1][0]
                                 target_file = moves_to_position[1][1]
@@ -139,6 +137,7 @@ class Main:
                         if valid:
                             player_clicks = []
                             square_selected = ()
+
                             reset_colors()
                         else:
                             player_clicks = [square_selected]
@@ -155,7 +154,8 @@ class Main:
                                 # Highlight the legal moves of the selected piece.
                                 if self.gs.board[final_rank][final_file].get_color() == self.gs.active_player():
                                     pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                    for i in legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])):
+                                    lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                                    for i in lgl_moves:
                                         moves_to_position = get_move_from_id(i)
                                         target_rank = moves_to_position[1][0]
                                         target_file = moves_to_position[1][1]

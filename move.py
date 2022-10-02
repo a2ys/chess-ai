@@ -1,6 +1,6 @@
 # This class defines a 'Move' object responsible for identification, validation and execution of a move.
 class Move:
-    def __init__(self, start_pos, end_pos, board):
+    def __init__(self, start_pos: tuple, end_pos: tuple, board: list) -> None:
         self.start_rank = start_pos[0]
         self.start_file = start_pos[1]
         self.end_rank = end_pos[0]
@@ -11,7 +11,7 @@ class Move:
         self.piece_moved = board[self.start_rank][self.start_file]
         self.piece_captured = board[self.end_rank][self.end_file]
 
-    def __eq__(self, other):
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Move):
             return self.move_id == other.move_id
         return False
@@ -19,5 +19,5 @@ class Move:
     def get_move_type(self):
         return self.move_type
 
-    def set_move_type(self, move_type):
+    def set_move_type(self, move_type: str) -> None:
         self.move_type = move_type
