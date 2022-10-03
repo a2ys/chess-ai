@@ -66,22 +66,31 @@ def index_to_pos(index: int) -> tuple:
 
 
 # Method that returns the move ID of a move
-def get_move_id(arg_move: list, spl_move_identifier: str) -> str:
+def get_move_id(arg_move: list, spl_move_identifier: str = 'n') -> str:
     m_id = ""
 
     for i in arg_move:
         m_id += str(i[0]) + str(i[1])
 
-    # if spl_move_identifier.lower() == 'c':
-    #     m_id += 'c'
-    # elif spl_move_identifier.lower() == 'e':
-    #     m_id += 'e'
-    # elif spl_move_identifier.lower() == 'p':
-    #     m_id += 'p'
-    # else:
-    #     raise defs.ChessErrors.InvalidMoveIdentifier("You provided an invalid move identifier.")
+    if spl_move_identifier.lower() in ['c', 'e', 'p', 'n']:
+        m_id += spl_move_identifier.lower()
+    else:
+        raise defs.ChessErrors.InvalidMoveIdentifier("You provided an invalid move identifier.")
 
     return m_id
+
+
+def is_move_id_equal(move_id: str, all_move_id: list) -> bool:
+    for m_id in all_move_id:
+        if m_id[:-1] == move_id:
+            return True
+    return False
+
+
+def get_move_type(move_id: str, all_move_id: list) -> str:
+    for m_id in all_move_id:
+        if m_id[:-1] == move_id:
+            return m_id[-1]
 
 
 # Method that returns the move from a move ID

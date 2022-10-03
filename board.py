@@ -84,14 +84,44 @@ class GameState:
                 pseudo_legal_moves = moves.legal_moves(self.board[given_move.start_rank][given_move.start_file], self.board)
                 piece = self.board[given_move.start_rank][given_move.start_file]
                 legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece)) + self.special_moves(piece)
+                move_id = const.get_move_id([(given_move.start_rank, given_move.start_file), (given_move.end_rank, given_move.end_file)])
+                is_legal = const.is_move_id_equal(move_id[:-1], legal_moves)
 
-                if const.get_move_id([(given_move.start_rank, given_move.start_file), (given_move.end_rank, given_move.end_file)]) in legal_moves:  # If the move is legal, it will be executed.
+                if is_legal:  # If the move is legal, it will be executed.
                     self.board[given_move.end_rank][given_move.end_file] = self.board[given_move.start_rank][given_move.start_file]
                     self.board[given_move.end_rank][given_move.end_file].set_rank(given_move.end_rank)
                     self.board[given_move.end_rank][given_move.end_file].set_file(given_move.end_file)
                     self.board[given_move.end_rank][given_move.end_file].update_move_history((given_move.end_rank, given_move.end_file))
                     self.board[given_move.start_rank][given_move.start_file] = WhiteSpace.WhiteSpace(given_move.start_file, given_move.start_rank)
-                    self.move_log.append(given_move)
+
+                    match const.get_move_type(move_id[:-1], legal_moves).lower():
+                        case 'c':
+                            given_move.set_move_type('c')
+
+                            if given_move.start_file - given_move.end_file < 0:
+                                self.board[given_move.end_rank][5] = self.board[given_move.end_rank][7]
+                                self.board[given_move.end_rank][5].set_rank(given_move.end_rank)
+                                self.board[given_move.end_rank][5].set_file(5)
+                                self.board[given_move.end_rank][5].update_move_history((given_move.end_rank, 5))
+                                self.board[given_move.end_rank][7] = WhiteSpace.WhiteSpace(given_move.end_rank, 7)
+                                given_move.set_special_pos((given_move.end_rank, 7))
+                                given_move.set_extra_piece(self.board[given_move.end_rank][5])
+
+                            elif given_move.start_file - given_move.end_file > 0:
+                                self.board[given_move.end_rank][3] = self.board[given_move.end_rank][0]
+                                self.board[given_move.end_rank][3].set_rank(given_move.end_rank)
+                                self.board[given_move.end_rank][3].set_file(3)
+                                self.board[given_move.end_rank][3].update_move_history((given_move.end_rank, 3))
+                                self.board[given_move.end_rank][0] = WhiteSpace.WhiteSpace(given_move.end_rank, 0)
+                                given_move.set_special_pos((given_move.end_rank, 0))
+                                given_move.set_extra_piece(self.board[given_move.end_rank][3])
+
+                            self.move_log.append(given_move)
+                        case 'n':
+                            given_move.set_move_type('n')
+                            self.move_log.append(given_move)
+                        case _:
+                            ChessErrors.InvalidMoveIdentifier("You provided an invalid move identifier.")
 
                     if given_move.piece_captured.get_alpha() == 'wK' or given_move.piece_captured.get_alpha() == 'bK':
                         raise ChessErrors.KingCapturedError(const.king_captured_error)
@@ -168,17 +198,27 @@ class GameState:
                     if piece.get_color() != self.board[rank][file].get_color():
                         temp = str(rank) + str(file)
                         for k in moves.legal_moves(piece, self.board):
-                            if temp == k[2:]:
+                            if temp == k[2:4]:
                                 return True
         return False
 
     def undo_move(self, testing: bool = False) -> bool:
         if len(self.move_log) > 0:
-            print(self.move_log)
             last_move = self.move_log.pop()
             self.board[last_move.start_rank][last_move.start_file] = last_move.piece_moved
             self.board[last_move.start_rank][last_move.start_file].set_rank(last_move.start_rank)
             self.board[last_move.start_rank][last_move.start_file].set_file(last_move.start_file)
+            if last_move.get_move_type() == 'c':
+                special_rank = last_move.get_special_pos()[0]
+                special_file = last_move.get_special_pos()[1]
+                special_piece = last_move.get_extra_piece()
+
+                self.board[special_piece.get_rank()][special_piece.get_file()] = WhiteSpace.WhiteSpace(special_piece.get_rank(), special_piece.get_file())
+                self.board[special_rank][special_file] = special_piece
+
+                self.board[special_rank][special_file].set_rank(special_rank)
+                self.board[special_rank][special_file].set_file(special_file)
+                self.board[special_rank][special_file].undo_last_move()
             if not testing:
                 self.board[last_move.start_rank][last_move.start_file].undo_last_move()
             self.board[last_move.end_rank][last_move.end_file] = last_move.piece_captured
@@ -198,6 +238,7 @@ class GameState:
                 false_move = move.Move(const.get_move_from_id(str_move)[0], const.get_move_from_id(str_move)[1], self.board)
                 active = self.active_player()
                 self.make_move(false_move, True)
+
                 if self.in_check(active):
                     wrong.append(str_move)
                 self.undo_move(True)
@@ -221,8 +262,7 @@ class GameState:
         for rank in self.board:
             for piece in rank:
                 if piece.get_color() == color:
-                    pseudo_legal_moves = moves.legal_moves(self.board[self.board.index(rank)][rank.index(piece)],
-                                                           self.board)
+                    pseudo_legal_moves = moves.legal_moves(self.board[self.board.index(rank)][rank.index(piece)], self.board)
                     piece = self.board[self.board.index(rank)][rank.index(piece)]
                     legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece))
 
@@ -236,7 +276,7 @@ class GameState:
                 if piece.get_color() == opponent_color:
                     legal_moves = moves.legal_moves(piece, self.board)
                     for legal_move in legal_moves:
-                        if legal_move[-2:] == (str(pos[0]) + str(pos[1])):
+                        if legal_move[-3:-1] == (str(pos[0]) + str(pos[1])):
                             return True
         return False
 
@@ -249,14 +289,12 @@ class GameState:
             if isinstance(piece, King.King) and not piece.get_move_history():
                 if isinstance(self.board[rank][file - 3], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 2], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 1], WhiteSpace.WhiteSpace):
                     if not self.board[rank][file - 4].get_move_history():
-                        if not self.is_pos_under_attack(self.opponent(), (rank, file - 3)) and not self.is_pos_under_attack(self.opponent(), (rank, file - 2)) and self.is_pos_under_attack(self.opponent(), (rank, file - 1)):
-                            special_move = [(rank, file), (rank, file - 3)]
-                            print(const.get_move_id(special_move))
-                            special_move_list += [const.get_move_id(special_move)]
+                        if not self.is_pos_under_attack(self.opponent(), (rank, file - 2)) and not self.is_pos_under_attack(self.opponent(), (rank, file - 1)):
+                            special_move = [(rank, file), (rank, file - 2)]
+                            special_move_list += [const.get_move_id(special_move, 'c')]
                 if isinstance(self.board[rank][file + 1], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file + 2], WhiteSpace.WhiteSpace):
                     if not self.board[rank][file + 3].get_move_history():
                         if not self.is_pos_under_attack(self.opponent(), (rank, file + 1)) and not self.is_pos_under_attack(self.opponent(), (rank, file + 2)):
                             special_move = [(rank, file), (rank, file + 2)]
-                            print(const.get_move_id(special_move))
-                            special_move_list += [const.get_move_id(special_move)]
+                            special_move_list += [const.get_move_id(special_move, 'c')]
         return special_move_list
