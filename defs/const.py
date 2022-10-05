@@ -11,6 +11,9 @@ DIMENSION = 8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 60
 IMAGES = {}
+PIECE_VALUES = {'K': 10000, 'Q': 900, 'R': 450, 'B': 350, 'N': 150, 'P': 100}
+CHECKMATE = 100000
+STALEMATE = 0
 
 # Colors format - [LIGHT, DARK]
 colors = [(238, 216, 192), (171, 122, 101)]
