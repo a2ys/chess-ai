@@ -1,6 +1,4 @@
-import board
 from defs import const
-from main import Main
 from piece import Piece, King, Queen, Bishop, Knight, Rook, Pawn, WhiteSpace
 
 
@@ -260,6 +258,11 @@ def legal_moves(piece: Piece, arg_board: list) -> list:
     elif isinstance(piece, Pawn.Pawn):
         moves = []
         for move in pawn_moves(piece.get_rank(), piece.get_file(), arg_board):
+            # if piece.get_color().lower() == 'white' and piece.get_rank() == 1:
+            #     moves.append(const.get_move_id([(piece.get_rank(), piece.get_file()), (move[0], move[1])], 'p'))
+            # elif piece.get_color().lower() == 'black' and piece.get_rank() == 6:
+            #     moves.append(const.get_move_id([(piece.get_rank(), piece.get_file()), (move[0], move[1])], 'p'))
+            # else:
             moves.append(const.get_move_id([(piece.get_rank(), piece.get_file()), (move[0], move[1])]))
         return moves
     else:

@@ -1,5 +1,6 @@
 import piece.Piece
 
+
 # This class defines a 'Move' object responsible for identification, validation and execution of a move.
 class Move:
     def __init__(self, start_pos: tuple, end_pos: tuple, board: list) -> None:
@@ -36,7 +37,7 @@ class Move:
     def get_extra_piece(self) -> piece.Piece:
         return self.extra_piece
 
-    def set_extra_piece(self, extra_piece_object: piece.Piece):
+    def set_extra_piece(self, extra_piece_object: piece.Piece) -> None:
         self.extra_piece = extra_piece_object
 
     def print_info(self) -> None:

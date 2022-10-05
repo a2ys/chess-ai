@@ -2,7 +2,7 @@
 import defs.ChessErrors
 
 initial_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-# initial_board = "4k3/8/8/8/8/8/8/3KQRR1 w KQkq - 0 1"
+# initial_board = "4k3/8/8/8/8/8/8/4K2R w KQkq - 0 1"
 
 
 # Pre-defined game constraints
@@ -48,6 +48,7 @@ color_error = "Invalid color value. Must be 'white' or 'black' (case-sensitive) 
               "To fix - Check all 'color' arguments of pieces in board.py.fen_to_board() method, or if you've defined the board.py by yourself, check the 'color' argument entered."
 no_king_error = "No King was found in the FEN string. If not done by you, report to me at - oreus@duck.com"
 king_captured_error = "The King was captured. There must be a bug, please report to me at - oreus@duck.com with full explanation of the moves you made."
+invalid_move_identifier_error = "You provided an invalid move identifier."
 
 
 # Method that returns a 2-D list from a 1-D list
@@ -75,11 +76,12 @@ def get_move_id(arg_move: list, spl_move_identifier: str = 'n') -> str:
     if spl_move_identifier.lower() in ['c', 'e', 'p', 'n']:
         m_id += spl_move_identifier.lower()
     else:
-        raise defs.ChessErrors.InvalidMoveIdentifier("You provided an invalid move identifier.")
+        raise defs.ChessErrors.InvalidMoveIdentifier(invalid_move_identifier_error)
 
     return m_id
 
 
+# Method to compare two move IDs
 def is_move_id_equal(move_id: str, all_move_id: list) -> bool:
     for m_id in all_move_id:
         if m_id[:-1] == move_id:
@@ -87,6 +89,7 @@ def is_move_id_equal(move_id: str, all_move_id: list) -> bool:
     return False
 
 
+# Method to get the move type in various cases.
 def get_move_type(move_id: str, all_move_id: list) -> str:
     for m_id in all_move_id:
         if m_id[:-1] == move_id:
@@ -109,5 +112,4 @@ def legal_moves(pseudo_legal_moves: list, illegal_moves: list) -> list:
     for move in illegal_moves:
         if move in pseudo_legal_moves:
             lgl_moves.remove(move)
-
     return lgl_moves

@@ -8,15 +8,16 @@ from piece import Piece, King, Queen, Bishop, Knight, Rook, Pawn, WhiteSpace
 
 class GameState:
     def __init__(self) -> None:
-        self.white_to_move = False
+        self.white_to_move = None
         self.move_check = False
+        self.castle_rights = {'white': [False, False],
+                              'black': [False, False]}  # 'color': [King-Side Castle, Queen-Side Castle]
         self.board = self.fen_to_board(const.initial_board)
         self.move_log = []
         self.white_king_position = (7, 4)
         self.black_king_position = (0, 4)
         pygame.init()
 
-    # This method converts the FEN string to a board of list data type using the 'to_matrix()' method.
     def fen_to_board(self, fen: str) -> list:
         fen_list = fen.split(' ')
         board = []
@@ -24,8 +25,24 @@ class GameState:
 
         if fen_list[1] == 'w':
             self.white_to_move = True
-        else:
+        elif fen_list[1] == 'b':
             self.white_to_move = False
+        else:
+            raise ChessErrors.InvalidFenError(const.fen_error)
+
+        if fen_list[2] != '-':
+            for rights in fen_list[2]:
+                match rights:
+                    case 'K':
+                        self.castle_rights['white'][0] = True
+                    case 'Q':
+                        self.castle_rights['white'][1] = True
+                    case 'k':
+                        self.castle_rights['black'][0] = True
+                    case 'q':
+                        self.castle_rights['black'][1] = True
+                    case _:
+                        raise ChessErrors.InvalidFenError(const.fen_error)
 
         if ('K' not in fen_list[0]) or ('k' not in fen_list[0]):
             raise ChessErrors.NoKingError(const.no_king_error)
@@ -36,7 +53,7 @@ class GameState:
                 file = 0
             elif char.isdigit():
                 for i in range(int(char)):
-                    board.append(WhiteSpace.WhiteSpace(file, rank))
+                    board.append(WhiteSpace.WhiteSpace(rank, file))
                     file += 1
             else:
                 match char:
@@ -72,7 +89,7 @@ class GameState:
             raise ChessErrors.InvalidFenError(const.invalid_fen_error)
         return const.to_matrix(board, 8)
 
-    def make_move(self, given_move: move.Move, testing: bool = False) -> bool:
+    def make_move(self, given_move: move.Move, testing: bool = False, sound: bool = True) -> bool:
         if self.board[given_move.start_rank][given_move.start_file].color == self.board[given_move.end_rank][given_move.end_file].color:  # If you are trying to overlap pieces, it will not be allowed.
             return False
         elif (self.board[given_move.start_rank][given_move.start_file].color == "white" and not self.white_to_move) or (self.board[given_move.start_rank][given_move.start_file].color == "black" and self.white_to_move):  # If it's not your move, it will not be allowed.
@@ -86,6 +103,14 @@ class GameState:
                 legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece)) + self.special_moves(piece)
                 move_id = const.get_move_id([(given_move.start_rank, given_move.start_file), (given_move.end_rank, given_move.end_file)])
                 is_legal = const.is_move_id_equal(move_id[:-1], legal_moves)
+
+                if isinstance(piece, Pawn.Pawn):
+                    if piece.get_color().lower() == 'white' and given_move.end_rank == 0:
+                        for i in range(len(legal_moves)):
+                            legal_moves[i] = legal_moves[i][:-1] + 'p'
+                    elif piece.get_color().lower() == 'black' and given_move.end_rank == 7:
+                        for i in range(len(legal_moves)):
+                            legal_moves[i] = legal_moves[i][:-1] + 'p'
 
                 if is_legal:  # If the move is legal, it will be executed.
                     self.board[given_move.end_rank][given_move.end_file] = self.board[given_move.start_rank][given_move.start_file]
@@ -117,11 +142,33 @@ class GameState:
                                 given_move.set_extra_piece(self.board[given_move.end_rank][3])
 
                             self.move_log.append(given_move)
+                        case 'e':
+                            given_move.set_move_type('e')
+
+                            if piece.get_color().lower() == 'white':
+                                given_move.set_extra_piece(self.board[given_move.end_rank + 1][given_move.end_file])
+                                given_move.set_special_pos((given_move.start_rank, given_move.end_file))
+                                self.board[given_move.end_rank + 1][given_move.end_file] = WhiteSpace.WhiteSpace(given_move.end_rank + 1, given_move.end_file)
+                            elif piece.get_color().lower() == 'black':
+                                given_move.set_extra_piece(self.board[given_move.end_rank - 1][given_move.end_file])
+                                given_move.set_special_pos((given_move.start_rank, given_move.end_file))
+                                self.board[given_move.end_rank - 1][given_move.end_file] = WhiteSpace.WhiteSpace(given_move.end_rank - 1, given_move.end_file)
+
+                            self.move_log.append(given_move)
+                        case 'p':
+                            given_move.set_move_type('p')
+
+                            given_move.set_extra_piece(self.board[given_move.end_rank][given_move.end_file])
+                            given_move.set_special_pos((given_move.start_rank, given_move.start_file))
+                            self.board[given_move.end_rank][given_move.end_file] = Queen.Queen(given_move.end_rank, given_move.end_file, piece.get_color())
+
+                            self.move_log.append(given_move)
                         case 'n':
                             given_move.set_move_type('n')
+
                             self.move_log.append(given_move)
                         case _:
-                            ChessErrors.InvalidMoveIdentifier("You provided an invalid move identifier.")
+                            ChessErrors.InvalidMoveIdentifier(const.invalid_move_identifier_error)
 
                     if given_move.piece_captured.get_alpha() == 'wK' or given_move.piece_captured.get_alpha() == 'bK':
                         raise ChessErrors.KingCapturedError(const.king_captured_error)
@@ -134,22 +181,31 @@ class GameState:
 
                     self.white_to_move = not self.white_to_move
 
-                    if not self.is_stalemate(self.active_player()):
-                        if self.in_check(self.active_player()):
-                            if self.is_checkmate(self.active_player()):
-                                if given_move.piece_captured.get_alpha() != "--":  # If you captured a piece and delivered a checkmate, it will be a capture and checkmate sound.
-                                    pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture_and_checkmate.mp3"))
-                                elif given_move.piece_captured.get_alpha() == "--":  # If you just delivered a checkmate, it will be executed with a checkmate sound.
-                                    pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/move_and_checkmate.mp3"))
-                            else:  # If you just delivered a check, it will be executed with a check sound.
-                                pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/check.wav"))
-                        else:
-                            if given_move.piece_captured.get_alpha() != "--":  # If you captured a piece, it will be executed with a capture sound.
-                                pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture.wav"))
-                            elif given_move.piece_captured.get_alpha() == "--":  # If you made a normal move, it will be executed with a normal sound.
-                                pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/normal.wav"))
-                    elif self.is_stalemate(self.active_player()):  # If the opponent was stalemated, it will be executed with a stalemate sound.
-                        pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/stalemate.mp3"))
+                    if sound:
+                        if not self.is_stalemate(self.active_player()):
+                            if self.in_check(self.active_player()):
+                                if self.is_checkmate(self.active_player()):
+                                    if given_move.piece_captured.get_alpha() != "--":  # If you captured a piece and delivered a checkmate, it will be a capture and checkmate sound.
+                                        pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture_and_checkmate.mp3"))
+                                    elif given_move.piece_captured.get_alpha() == "--":  # If you just delivered a checkmate, it will be executed with a checkmate sound.
+                                        if given_move.get_move_type() == 'e':
+                                            pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture_and_checkmate.mp3"))
+                                        else:
+                                            pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/move_and_checkmate.mp3"))
+                                else:  # If you just delivered a check, it will be executed with a check sound.
+                                    pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/check.wav"))
+                            else:
+                                if given_move.piece_captured.get_alpha() != "--":  # If you captured a piece, it will be executed with a capture sound.
+                                    pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture.wav"))
+                                elif given_move.piece_captured.get_alpha() == "--":  # If you made a normal move, it will be executed with a normal sound.
+                                    if given_move.get_move_type() == 'e':
+                                        pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/capture.wav"))
+                                    elif given_move.get_move_type() == 'c':
+                                        pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/castle.mp3"))
+                                    else:
+                                        pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/normal.wav"))
+                        elif self.is_stalemate(self.active_player()):  # If the opponent was stalemated, it will be executed with a stalemate sound.
+                            pygame.mixer.Sound.play(pygame.mixer.Sound("assets/sounds/stalemate.mp3"))
                 return True
             elif testing:
                 if const.get_move_id([(given_move.start_rank, given_move.start_file), (given_move.end_rank, given_move.end_file)]) in moves.legal_moves(self.board[given_move.start_rank][given_move.start_file], self.board):  # If the move is legal, it will be executed.
@@ -219,6 +275,10 @@ class GameState:
                 self.board[special_rank][special_file].set_rank(special_rank)
                 self.board[special_rank][special_file].set_file(special_file)
                 self.board[special_rank][special_file].undo_last_move()
+            if last_move.get_move_type() == 'e':
+                special_piece = last_move.get_extra_piece()
+
+                self.board[special_piece.get_rank()][special_piece.get_file()] = special_piece
             if not testing:
                 self.board[last_move.start_rank][last_move.start_file].undo_last_move()
             self.board[last_move.end_rank][last_move.end_file] = last_move.piece_captured
@@ -287,14 +347,59 @@ class GameState:
         file = piece.get_file()
         if not self.in_check(self.active_player()):
             if isinstance(piece, King.King) and not piece.get_move_history():
-                if isinstance(self.board[rank][file - 3], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 2], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 1], WhiteSpace.WhiteSpace):
-                    if not self.board[rank][file - 4].get_move_history():
-                        if not self.is_pos_under_attack(self.opponent(), (rank, file - 2)) and not self.is_pos_under_attack(self.opponent(), (rank, file - 1)):
-                            special_move = [(rank, file), (rank, file - 2)]
-                            special_move_list += [const.get_move_id(special_move, 'c')]
-                if isinstance(self.board[rank][file + 1], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file + 2], WhiteSpace.WhiteSpace):
-                    if not self.board[rank][file + 3].get_move_history():
-                        if not self.is_pos_under_attack(self.opponent(), (rank, file + 1)) and not self.is_pos_under_attack(self.opponent(), (rank, file + 2)):
-                            special_move = [(rank, file), (rank, file + 2)]
-                            special_move_list += [const.get_move_id(special_move, 'c')]
+                if piece.get_color().lower() == 'white' and (piece.get_rank(), piece.get_file()) == (7, 4):
+                    if self.castle_rights['white'][1]:
+                        if isinstance(self.board[rank][file - 3], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 2], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 1], WhiteSpace.WhiteSpace):
+                            if not isinstance(self.board[rank][file - 4], WhiteSpace.WhiteSpace):
+                                if not self.board[rank][file - 4].get_move_history():
+                                    if not self.is_pos_under_attack(self.opponent(), (rank, file - 2)) and not self.is_pos_under_attack(self.opponent(), (rank, file - 1)):
+                                        special_move = [(rank, file), (rank, file - 2)]
+                                        special_move_list += [const.get_move_id(special_move, 'c')]
+                    if self.castle_rights['white'][0]:
+                        if isinstance(self.board[rank][file + 1], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file + 2], WhiteSpace.WhiteSpace):
+                            if not isinstance(self.board[rank][file + 3], WhiteSpace.WhiteSpace):
+                                if not self.board[rank][file + 3].get_move_history():
+                                    if not self.is_pos_under_attack(self.opponent(), (rank, file + 1)) and not self.is_pos_under_attack(self.opponent(), (rank, file + 2)):
+                                        special_move = [(rank, file), (rank, file + 2)]
+                                        special_move_list += [const.get_move_id(special_move, 'c')]
+                elif piece.get_color().lower() == 'black' and (piece.get_rank(), piece.get_file()) == (0, 4):
+                    if self.castle_rights['black'][1]:
+                        if isinstance(self.board[rank][file - 3], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 2], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file - 1], WhiteSpace.WhiteSpace):
+                            if not isinstance(self.board[rank][file - 4], WhiteSpace.WhiteSpace):
+                                if not self.board[rank][file - 4].get_move_history():
+                                    if not self.is_pos_under_attack(self.opponent(), (rank, file - 2)) and not self.is_pos_under_attack(self.opponent(), (rank, file - 1)):
+                                        special_move = [(rank, file), (rank, file - 2)]
+                                        special_move_list += [const.get_move_id(special_move, 'c')]
+                    if self.castle_rights['black'][0]:
+                        if isinstance(self.board[rank][file + 1], WhiteSpace.WhiteSpace) and isinstance(self.board[rank][file + 2], WhiteSpace.WhiteSpace):
+                            if not isinstance(self.board[rank][file + 3], WhiteSpace.WhiteSpace):
+                                if not self.board[rank][file + 3].get_move_history():
+                                    if not self.is_pos_under_attack(self.opponent(), (rank, file + 1)) and not self.is_pos_under_attack(self.opponent(), (rank, file + 2)):
+                                        special_move = [(rank, file), (rank, file + 2)]
+                                        special_move_list += [const.get_move_id(special_move, 'c')]
+
+            if isinstance(piece, Pawn.Pawn):
+                # En-passant
+                if piece.get_color().lower() == 'white' and piece.get_rank() == 3:
+                    if file > 0:
+                        if isinstance(self.board[rank][file - 1], Pawn.Pawn) and len(self.board[rank][file - 1].get_move_history()) == 1:
+                            if len(self.move_log) > 0 and self.move_log[-1].piece_moved == self.board[rank][file - 1]:
+                                special_move = [(rank, file), (rank - 1, file - 1)]
+                                special_move_list += [const.get_move_id(special_move, 'e')]
+                    if file < 7:
+                        if isinstance(self.board[rank][file + 1], Pawn.Pawn) and len(self.board[rank][file + 1].get_move_history()) == 1:
+                            if len(self.move_log) > 0 and self.move_log[-1].piece_moved == self.board[rank][file + 1]:
+                                special_move = [(rank, file), (rank - 1, file + 1)]
+                                special_move_list += [const.get_move_id(special_move, 'e')]
+                elif piece.get_color().lower() == 'black' and piece.get_rank() == 4:
+                    if file > 0:
+                        if isinstance(self.board[rank][file - 1], Pawn.Pawn) and len(self.board[rank][file - 1].get_move_history()) == 1:
+                            if len(self.move_log) > 0 and self.move_log[-1].piece_moved == self.board[rank][file - 1]:
+                                special_move = [(rank, file), (rank + 1, file - 1)]
+                                special_move_list += [const.get_move_id(special_move, 'e')]
+                    if file < 7:
+                        if isinstance(self.board[rank][file + 1], Pawn.Pawn) and len(self.board[rank][file + 1].get_move_history()) == 1:
+                            if len(self.move_log) > 0 and self.move_log[-1].piece_moved == self.board[rank][file + 1]:
+                                special_move = [(rank, file), (rank + 1, file + 1)]
+                                special_move_list += [const.get_move_id(special_move, 'e')]
         return special_move_list
