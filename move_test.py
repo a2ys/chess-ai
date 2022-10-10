@@ -37,7 +37,7 @@ class Tests(unittest.TestCase):
                                 for p in r:
                                     if p.get_alpha() != "--":
                                         if p.get_color().lower() == 'black':
-                                            for _ in moves.legal_moves(p, gs.board):
+                                            for _ in gs.legal_moves(moves.legal_moves(p, gs.board)):
                                                 total += 1
 
                             gs.undo_move()
@@ -70,7 +70,7 @@ class Tests(unittest.TestCase):
                                                     for j in i:
                                                         if j.get_alpha() != "--":
                                                             if j.get_color().lower() == 'white':
-                                                                for _ in moves.legal_moves(j, gs.board):
+                                                                for _ in gs.legal_moves(moves.legal_moves(j, gs.board)):
                                                                     total += 1
                                                 gs.undo_move()
                             gs.undo_move()
@@ -111,7 +111,7 @@ class Tests(unittest.TestCase):
                                                                         for b in a:
                                                                             if b.get_alpha() != "--":
                                                                                 if b.get_color().lower() == 'black':
-                                                                                    for _ in moves.legal_moves(b, gs.board):
+                                                                                    for _ in gs.legal_moves(moves.legal_moves(b, gs.board)):
                                                                                         total += 1
                                                                     gs.undo_move()
                                                 gs.undo_move()
