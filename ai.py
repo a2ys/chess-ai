@@ -1,5 +1,4 @@
 import random
-import time
 
 import board
 import move
@@ -35,40 +34,72 @@ def generate_legal_moves(gs: board.GameState) -> list:
 
 
 def make_move(gs: board.GameState) -> None:
-    turn_multiplier = 1 if gs.white_to_move else -1
-    opponent_minmax_score = const.CHECKMATE
-    best_move = None
-    player_moves = generate_legal_moves(gs)
-    random.shuffle(player_moves)
-
-    for player_move in player_moves:
-        test_mv = const.get_move_from_id(player_move)
-        r_mv = move.Move(test_mv[0], test_mv[1], gs.board)
-        gs.make_move(r_mv, sound=False)
-        opponent_max_score = -const.CHECKMATE
-        opponent_moves = generate_legal_moves(gs)
-
-        for opponent_move in opponent_moves:
-            opp_mv = const.get_move_from_id(opponent_move)
-            o_mv = move.Move(opp_mv[0], opp_mv[1], gs.board)
-            gs.make_move(o_mv, sound=False)
-
-            if gs.is_checkmate(gs.active_player()):
-                score = -turn_multiplier * const.CHECKMATE
-            elif gs.is_stalemate(gs.active_player()):
-                score = const.STALEMATE
-            else:
-                score = -turn_multiplier * evaluate(gs)
-
-            if score > opponent_max_score:
-                opponent_max_score = score
-            gs.undo_move()
-
-        if opponent_max_score < opponent_minmax_score:
-            opponent_minmax_score = opponent_max_score
-            best_move = player_move
-        gs.undo_move()
-
+    best_move = find_best_move(gs)
     tmv = const.get_move_from_id(best_move)
     mv = move.Move(tmv[0], tmv[1], gs.board)
     gs.make_move(mv)
+
+
+def find_best_move(gs: board.GameState) -> str:
+    global next_move
+
+    next_move = None
+    valid_moves = generate_legal_moves(gs)
+    random.shuffle(valid_moves)
+    find_move_nega_max_alpha_beta(gs, valid_moves, const.DEPTH, -const.CHECKMATE, const.CHECKMATE, 1 if gs.white_to_move else -1)
+
+    return next_move
+
+
+def find_move_nega_max(gs: board.GameState, valid_moves: list, depth: int, turn_multiplier: int) -> int:
+    global next_move
+
+    if depth == 0:
+        return turn_multiplier * evaluate(gs)
+
+    max_score = -const.CHECKMATE
+    for valid_move in valid_moves:
+        mv = const.get_move_from_id(valid_move)
+        r = move.Move(mv[0], mv[1], gs.board)
+        gs.make_move(r, sound=False)
+
+        next_moves = generate_legal_moves(gs)
+        score = -find_move_nega_max(gs, next_moves, depth - 1, -turn_multiplier)
+
+        if score > max_score:
+            max_score = score
+            if depth == const.DEPTH:
+                next_move = valid_move
+        gs.undo_move()
+
+    return max_score
+
+
+def find_move_nega_max_alpha_beta(gs: board.GameState, valid_moves: list, depth: int, alpha: int, beta: int, turn_multiplier: int) -> int:
+    global next_move
+
+    if depth == 0:
+        return turn_multiplier * evaluate(gs)
+
+    max_score = -const.CHECKMATE
+    for valid_move in valid_moves:
+        mv = const.get_move_from_id(valid_move)
+        r = move.Move(mv[0], mv[1], gs.board)
+        gs.make_move(r, sound=False)
+
+        next_moves = generate_legal_moves(gs)
+        score = -find_move_nega_max_alpha_beta(gs, next_moves, depth - 1, -beta, -alpha, -turn_multiplier)
+
+        if score > max_score:
+            max_score = score
+            if depth == const.DEPTH:
+                next_move = valid_move
+        gs.undo_move()
+
+        if max_score > alpha:
+            alpha = max_score
+
+        if alpha >= beta:
+            break
+
+    return max_score

@@ -348,6 +348,7 @@ class GameState:
     def special_moves(self, piece: Piece) -> list:
         special_move_list = []
         # Castling
+        # TODO: Fix the bug that the King can castle with any friendly piece
         rank = piece.get_rank()
         file = piece.get_file()
         if not self.in_check(self.active_player()):
@@ -385,6 +386,7 @@ class GameState:
 
             if isinstance(piece, Pawn.Pawn):
                 # En-passant
+                # TODO - Fix the bug in the FEN "k7/6p1/8/q4P1K/8/8/8/8 b KQkq - 0 1"
                 if piece.get_color().lower() == 'white' and piece.get_rank() == 3:
                     if file > 0:
                         if isinstance(self.board[rank][file - 1], Pawn.Pawn) and len(self.board[rank][file - 1].get_move_history()) == 1:
