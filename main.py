@@ -63,6 +63,7 @@ class Main:
 
         while True:
 
+            # TODO - Make valid return a tuple[bool, bool] and optimize this piece of code.
             if self.gs.is_checkmate(self.gs.active_player()):
                 print(f"{self.gs.active_player()} has been checkmated!")
                 return 0
@@ -104,7 +105,7 @@ class Main:
                                 # Highlight the legal moves of the selected piece.
                                 if self.gs.board[rank][file].get_color() == self.gs.active_player():
                                     pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                    lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                                    lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
                                     for i in lgl_moves:
                                         moves_to_position = get_move_from_id(i)
                                         target_rank = moves_to_position[1][0]
@@ -120,7 +121,7 @@ class Main:
                             # Highlight the legal moves of the selected piece.
                             if self.gs.board[rank][file].get_color() == self.gs.active_player():
                                 pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
                                 for i in lgl_moves:
                                     moves_to_position = get_move_from_id(i)
                                     target_rank = moves_to_position[1][0]
@@ -163,7 +164,7 @@ class Main:
                                     # Highlight the legal moves of the selected piece.
                                     if self.gs.board[final_rank][final_file].get_color() == self.gs.active_player():
                                         pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                        lgl_moves = legal_moves(pseudo_legal_moves, self.gs.illegal_moves(self.gs.board[rank][file])) + self.gs.special_moves(self.gs.board[rank][file])
+                                        lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
                                         for i in lgl_moves:
                                             moves_to_position = get_move_from_id(i)
                                             target_rank = moves_to_position[1][0]

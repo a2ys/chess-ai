@@ -1,4 +1,5 @@
 import random
+import time
 
 import board
 import move
@@ -20,50 +21,54 @@ def evaluate(gs: board.GameState) -> int:
     return board_eval
 
 
-def make_move(gs: board.GameState) -> None:
-    more_feasible_moves = []
-    less_feasible_moves = []
+def generate_legal_moves(gs: board.GameState) -> list:
+    legal_moves = []
 
     for rank in gs.board:
         for piece in rank:
-            if piece.get_color() == gs.active_player().lower():
-                pseudo_legal_moves = moves.legal_moves(piece, gs.board)
-                lgl_moves = const.legal_moves(pseudo_legal_moves, gs.illegal_moves(piece)) + gs.special_moves(piece)
+            if piece.get_alpha() != '--':
+                if piece.get_color() == gs.active_player():
+                    lgl_moves = gs.legal_moves(moves.legal_moves(piece, gs.board)) + gs.special_moves(piece)
+                    legal_moves += lgl_moves
 
-                initial_eval = evaluate(gs)
+    return legal_moves
 
-                for legal_move in lgl_moves:
-                    test_mv = const.get_move_from_id(legal_move)
-                    r_mv = move.Move(test_mv[0], test_mv[1], gs.board)
 
-                    gs.make_move(r_mv, sound=False)
+def make_move(gs: board.GameState) -> None:
+    turn_multiplier = 1 if gs.white_to_move else -1
+    opponent_minmax_score = const.CHECKMATE
+    best_move = None
+    player_moves = generate_legal_moves(gs)
+    random.shuffle(player_moves)
 
-                    for row in gs.board:
-                        for p in row:
-                            if p.get_alpha() != '--':
-                                if p.get_color().lower() == gs.active_player():
-                                    pseudo_legal_moves = moves.legal_moves(p, gs.board)
-                                    lgl_moves = const.legal_moves(pseudo_legal_moves, gs.illegal_moves(p)) + gs.special_moves(p)
+    for player_move in player_moves:
+        test_mv = const.get_move_from_id(player_move)
+        r_mv = move.Move(test_mv[0], test_mv[1], gs.board)
+        gs.make_move(r_mv, sound=False)
+        opponent_max_score = -const.CHECKMATE
+        opponent_moves = generate_legal_moves(gs)
 
-                                    eval2 = evaluate(gs)
+        for opponent_move in opponent_moves:
+            opp_mv = const.get_move_from_id(opponent_move)
+            o_mv = move.Move(opp_mv[0], opp_mv[1], gs.board)
+            gs.make_move(o_mv, sound=False)
 
-                                    for m in lgl_moves:
-                                        t = const.get_move_from_id(m)
-                                        r = move.Move(t[0], t[1], gs.board)
+            if gs.is_checkmate(gs.active_player()):
+                score = -turn_multiplier * const.CHECKMATE
+            elif gs.is_stalemate(gs.active_player()):
+                score = const.STALEMATE
+            else:
+                score = -turn_multiplier * evaluate(gs)
 
-                                        gs.make_move(r, sound=False)
+            if score > opponent_max_score:
+                opponent_max_score = score
+            gs.undo_move()
 
-                                        if evaluate(gs) < eval2:
-                                            less_feasible_moves += [r_mv]
-                                        else:
-                                            more_feasible_moves += [r_mv]
+        if opponent_max_score < opponent_minmax_score:
+            opponent_minmax_score = opponent_max_score
+            best_move = player_move
+        gs.undo_move()
 
-                                        gs.undo_move()
-
-                    gs.undo_move()
-
-    if more_feasible_moves:
-        random_move_id = random.randint(0, len(more_feasible_moves) - 1)
-        gs.make_move(more_feasible_moves[random_move_id])
-    else:
-        gs.make_move(less_feasible_moves[random.randint(0, len(less_feasible_moves) - 1)])
+    tmv = const.get_move_from_id(best_move)
+    mv = move.Move(tmv[0], tmv[1], gs.board)
+    gs.make_move(mv)

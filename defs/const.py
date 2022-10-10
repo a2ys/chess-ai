@@ -2,7 +2,7 @@
 import defs.ChessErrors
 
 initial_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-# initial_board = "4k3/8/8/8/8/8/8/4K2R w KQkq - 0 1"
+# initial_board = "4k3/8/8/8/8/8/8/4K2Q w KQkq - 0 1"
 
 
 # Pre-defined game constraints

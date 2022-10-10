@@ -1,4 +1,5 @@
 import pygame
+import time
 
 import move
 import moves
@@ -98,9 +99,9 @@ class GameState:
             # When you're not checking for legal moves, this piece of code will run.
             if not testing:
                 # This piece of code will filter out illegal moves from pseudo-legal moves and give out a legal-move list
-                pseudo_legal_moves = moves.legal_moves(self.board[given_move.start_rank][given_move.start_file], self.board)
                 piece = self.board[given_move.start_rank][given_move.start_file]
-                legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece)) + self.special_moves(piece)
+                pseudo_legal_moves = moves.legal_moves(piece, self.board)
+                legal_moves = self.legal_moves(pseudo_legal_moves) + self.special_moves(piece)
                 move_id = const.get_move_id([(given_move.start_rank, given_move.start_file), (given_move.end_rank, given_move.end_file)])
                 is_legal = const.is_move_id_equal(move_id[:-1], legal_moves)
 
@@ -250,12 +251,11 @@ class GameState:
     def is_square_under_attack(self, rank: int, file: int) -> bool:
         for row in self.board:
             for piece in row:
-                if piece.get_alpha() != "--":
-                    if piece.get_color() != self.board[rank][file].get_color():
-                        temp = str(rank) + str(file)
-                        for k in moves.legal_moves(piece, self.board):
-                            if temp == k[2:4]:
-                                return True
+                if piece.get_alpha() != "--" and piece.get_color() != self.board[rank][file].get_color():
+                    temp = str(rank) + str(file)
+                    for k in moves.legal_moves(piece, self.board):
+                        if temp == k[2:4]:
+                            return True
         return False
 
     def undo_move(self, testing: bool = False) -> bool:
@@ -291,44 +291,49 @@ class GameState:
         else:
             return False
 
-    def illegal_moves(self, piece: Piece) -> list:
-        wrong = []
-        if piece.get_color() == self.active_player():
-            for str_move in moves.legal_moves(piece, self.board):
-                false_move = move.Move(const.get_move_from_id(str_move)[0], const.get_move_from_id(str_move)[1], self.board)
-                active = self.active_player()
-                self.make_move(false_move, True)
+    def legal_moves(self, pseudo_legal: list) -> list:
+        legal_moves_list = pseudo_legal
+        for i in range(len(legal_moves_list) - 1, -1, -1):
+            false_move = move.Move(const.get_move_from_id(legal_moves_list[i])[0], const.get_move_from_id(legal_moves_list[i])[1], self.board)
+            active = self.active_player()
+            self.make_move(false_move, True)
 
-                if self.in_check(active):
-                    wrong.append(str_move)
-                self.undo_move(True)
-        return wrong
+            if self.in_check(active):
+                legal_moves_list.pop(i)
+            self.undo_move(True)
+        return legal_moves_list
 
     def is_checkmate(self, color: str) -> bool:
         available_moves = []
-        for rank in self.board:
-            for piece in rank:
-                if piece.get_color() == color:
-                    pseudo_legal_moves = moves.legal_moves(self.board[self.board.index(rank)][rank.index(piece)], self.board)
-                    piece = self.board[self.board.index(rank)][rank.index(piece)]
-                    legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece))
+        if self.in_check(color):
+            for rank in self.board:
+                for piece in rank:
+                    if piece.get_color() == color:
+                        pseudo_legal_moves = moves.legal_moves(piece, self.board)
+                        legal_moves = self.legal_moves(pseudo_legal_moves)
+                        available_moves += legal_moves
 
-                    available_moves += legal_moves
-
-        return True if self.in_check(color) and not available_moves else False
+                        if available_moves:
+                            return False
+            return True
+        else:
+            return False
 
     def is_stalemate(self, color: str) -> bool:
         available_moves = []
-        for rank in self.board:
-            for piece in rank:
-                if piece.get_color() == color:
-                    pseudo_legal_moves = moves.legal_moves(self.board[self.board.index(rank)][rank.index(piece)], self.board)
-                    piece = self.board[self.board.index(rank)][rank.index(piece)]
-                    legal_moves = const.legal_moves(pseudo_legal_moves, self.illegal_moves(piece))
+        if not self.in_check(color):
+            for rank in self.board:
+                for piece in rank:
+                    if piece.get_color() == color:
+                        pseudo_legal_moves = moves.legal_moves(piece, self.board)
+                        legal_moves = self.legal_moves(pseudo_legal_moves)
+                        available_moves += legal_moves
 
-                    available_moves += legal_moves
-
-        return True if not self.in_check(color) and not available_moves else False
+                        if available_moves:
+                            return False
+            return True
+        else:
+            return False
 
     def is_pos_under_attack(self, opponent_color: str, pos: tuple) -> bool:
         for rank in self.board:
