@@ -15,7 +15,7 @@ class Tests(unittest.TestCase):
             for piece in rank:
                 if piece.get_alpha() != '--':
                     if piece.get_color().lower() == 'white':
-                        for _ in moves.legal_moves(piece, gs.board):
+                        for _ in gs.legal_moves(moves.legal_moves(piece, gs.board)):
                             total += 1
 
         self.assertEqual(total, 20)
@@ -28,7 +28,7 @@ class Tests(unittest.TestCase):
             for piece in rank:
                 if piece.get_alpha() != "--":
                     if piece.get_color().lower() == 'white':
-                        for legal_move in moves.legal_moves(piece, gs.board):
+                        for legal_move in gs.legal_moves(moves.legal_moves(piece, gs.board)):
                             pos = const.get_move_from_id(legal_move)
                             mv = move.Move(pos[0], pos[1], gs.board)
                             gs.make_move(mv, sound=False)
@@ -52,7 +52,7 @@ class Tests(unittest.TestCase):
             for piece in rank:
                 if piece.get_alpha() != "--":
                     if piece.get_color().lower() == 'white':
-                        for legal_move in moves.legal_moves(piece, gs.board):
+                        for legal_move in gs.legal_moves(moves.legal_moves(piece, gs.board)):
                             pos = const.get_move_from_id(legal_move)
                             m = move.Move(pos[0], pos[1], gs.board)
                             gs.make_move(m, sound=False)
@@ -61,7 +61,7 @@ class Tests(unittest.TestCase):
                                 for p in r:
                                     if p.get_alpha() != "--":
                                         if p.get_color().lower() == 'black':
-                                            for lgl_move in moves.legal_moves(p, gs.board):
+                                            for lgl_move in gs.legal_moves(moves.legal_moves(p, gs.board)):
                                                 pos = const.get_move_from_id(lgl_move)
                                                 mv = move.Move(pos[0], pos[1], gs.board)
                                                 gs.make_move(mv, sound=False)
@@ -84,7 +84,7 @@ class Tests(unittest.TestCase):
             for piece in rank:
                 if piece.get_alpha() != "--":
                     if piece.get_color().lower() == 'white':
-                        for legal_move in moves.legal_moves(piece, gs.board):
+                        for legal_move in gs.legal_moves(moves.legal_moves(piece, gs.board)):
                             pos = const.get_move_from_id(legal_move)
                             m = move.Move(pos[0], pos[1], gs.board)
                             gs.make_move(m, sound=False)
@@ -93,7 +93,7 @@ class Tests(unittest.TestCase):
                                 for p in r:
                                     if p.get_alpha() != "--":
                                         if p.get_color().lower() == 'black':
-                                            for lgl_move in moves.legal_moves(p, gs.board):
+                                            for lgl_move in gs.legal_moves(moves.legal_moves(p, gs.board)):
                                                 pos = const.get_move_from_id(lgl_move)
                                                 mv = move.Move(pos[0], pos[1], gs.board)
                                                 gs.make_move(mv, sound=False)
@@ -102,7 +102,7 @@ class Tests(unittest.TestCase):
                                                     for j in i:
                                                         if j.get_alpha() != "--":
                                                             if j.get_color().lower() == 'white':
-                                                                for lgl in moves.legal_moves(j, gs.board):
+                                                                for lgl in gs.legal_moves(moves.legal_moves(j, gs.board)):
                                                                     pos = const.get_move_from_id(lgl)
                                                                     mv = move.Move(pos[0], pos[1], gs.board)
                                                                     gs.make_move(mv, sound=False)
@@ -126,7 +126,7 @@ class Tests(unittest.TestCase):
             for piece in rank:
                 if piece.get_alpha() != "--":
                     if piece.get_color().lower() == 'white':
-                        for legal_move in moves.legal_moves(piece, gs.board):
+                        for legal_move in gs.legal_moves(moves.legal_moves(piece, gs.board)):
                             pos = const.get_move_from_id(legal_move)
                             m = move.Move(pos[0], pos[1], gs.board)
                             gs.make_move(m, sound=False)
@@ -135,7 +135,7 @@ class Tests(unittest.TestCase):
                                 for p in r:
                                     if p.get_alpha() != "--":
                                         if p.get_color().lower() == 'black':
-                                            for lgl_move in moves.legal_moves(p, gs.board):
+                                            for lgl_move in gs.legal_moves(moves.legal_moves(p, gs.board)):
                                                 pos = const.get_move_from_id(lgl_move)
                                                 mv = move.Move(pos[0], pos[1], gs.board)
                                                 gs.make_move(mv, sound=False)
@@ -144,7 +144,7 @@ class Tests(unittest.TestCase):
                                                     for j in i:
                                                         if j.get_alpha() != "--":
                                                             if j.get_color().lower() == 'white':
-                                                                for lgl in moves.legal_moves(j, gs.board):
+                                                                for lgl in gs.legal_moves(moves.legal_moves(j, gs.board)):
                                                                     pos = const.get_move_from_id(lgl)
                                                                     mv = move.Move(pos[0], pos[1], gs.board)
                                                                     gs.make_move(mv, sound=False)
@@ -159,7 +159,7 @@ class Tests(unittest.TestCase):
 
                                                                                     for c in gs.board:
                                                                                         for d in c:
-                                                                                            for _ in moves.legal_moves(d, gs.board):
+                                                                                            for _ in gs.legal_moves(moves.legal_moves(d, gs.board)):
                                                                                                 total += 1
                                                                                     gs.undo_move()
                                                                     gs.undo_move()
