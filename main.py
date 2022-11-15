@@ -62,7 +62,6 @@ class Main:
         player_clicks = []
 
         while True:
-
             # TODO - Make valid return a tuple[bool, bool] and optimize this piece of code.
             if self.gs.is_checkmate(self.gs.active_player()):
                 print(f"{self.gs.active_player()} has been checkmated!")

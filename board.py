@@ -170,6 +170,9 @@ class GameState:
                             self.move_log.append(given_move)
                         case _:
                             ChessErrors.InvalidMoveIdentifier(const.invalid_move_identifier_error)
+                    
+                    # if given_move.piece_captured.get_alpha() != "--":
+                    #     given_move.print_info()
 
                     if given_move.piece_captured.get_alpha() == 'wK' or given_move.piece_captured.get_alpha() == 'bK':
                         raise ChessErrors.KingCapturedError(const.king_captured_error)
@@ -231,10 +234,8 @@ class GameState:
             king_position = self.white_king_position
         else:
             king_position = self.black_king_position
-        if self.is_square_under_attack(king_position[0], king_position[1]):
-            return True
-        else:
-            return False
+
+        return self.better_is_square_under_attack(king_position[0], king_position[1])
 
     def active_player(self) -> str:
         if self.white_to_move:
@@ -248,14 +249,165 @@ class GameState:
         else:
             return "white"
 
-    def is_square_under_attack(self, rank: int, file: int) -> bool:
-        for row in self.board:
-            for piece in row:
-                if piece.get_alpha() != "--" and piece.get_color() != self.board[rank][file].get_color():
-                    temp = str(rank) + str(file)
-                    for k in moves.legal_moves(piece, self.board):
-                        if temp == k[2:4]:
-                            return True
+    # def is_square_under_attack(self, rank: int, file: int) -> bool:
+    #     for row in self.board:
+    #         for piece in row:
+    #             if piece.get_alpha() != "--" and piece.get_color() != self.board[rank][file].get_color():
+    #                 temp = str(rank) + str(file)
+    #                 for k in moves.legal_moves(piece, self.board):
+    #                     if temp == k[2:4]:
+    #                         return True
+    #     return False
+
+    def better_is_square_under_attack(self, rank: int, file: int) -> bool:
+        piece = self.board[rank][file]
+
+        # DIAGONAL
+        for i in range(rank + 1, 8):
+            if file + (i - rank) <= 7:
+                if isinstance(self.board[i][file + (i - rank)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file + (i - rank)], Queen.Queen) or isinstance(self.board[i][file + (i - rank)], Bishop.Bishop)) and self.board[i][file + (i - rank)].get_color() != piece.get_color():
+                    return True
+                else:
+                    break
+
+        for i in range(rank + 1, 8):
+            if file - (i - rank) >= 0:
+                if isinstance(self.board[i][file - (i - rank)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file - (i - rank)], Queen.Queen) or isinstance(self.board[i][file - (i - rank)], Bishop.Bishop)) and self.board[i][file - (i - rank)].get_color() != piece.get_color():
+                    return True
+                else:
+                    break
+
+        for i in range(rank - 1, -1, -1):
+            if file + (rank - i) <= 7:
+                if isinstance(self.board[i][file + (rank - i)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file + (rank - i)], Queen.Queen) or isinstance(self.board[i][file + (rank - i)], Bishop.Bishop)) and self.board[i][file + (rank - i)].get_color() != piece.get_color():
+                    return True
+                else:
+                    break
+
+        for i in range(rank - 1, -1, -1):
+            if file - (rank - i) >= 0:
+                if isinstance(self.board[i][file - (rank - i)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file - (rank - i)], Queen.Queen) or isinstance(self.board[i][file - (rank - i)], Bishop.Bishop)) and self.board[i][file - (rank - i)].get_color() != piece.get_color():
+                    return True
+                else:
+                    break
+
+        # STRAIGHT
+        for i in range(rank + 1, 8):
+            if isinstance(self.board[i][file], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[i][file], Queen.Queen) or isinstance(self.board[i][file], Rook.Rook)) and self.board[i][file].get_color() != piece.get_color():
+                return True
+            else:
+                break
+
+        for i in range(rank - 1, -1, -1):
+            if isinstance(self.board[i][file], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[i][file], Queen.Queen) or isinstance(self.board[i][file], Rook.Rook)) and self.board[i][file].get_color() != piece.get_color():
+                return True
+            else:
+                break
+
+        for i in range(file + 1, 8):
+            if isinstance(self.board[rank][i], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[rank][i], Queen.Queen) or isinstance(self.board[rank][i], Rook.Rook)) and self.board[rank][i].get_color() != piece.get_color():
+                return True
+            else:
+                break
+
+        for i in range(file - 1, -1, -1):
+            if isinstance(self.board[rank][i], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[rank][i], Queen.Queen) or isinstance(self.board[rank][i], Rook.Rook)) and self.board[rank][i].get_color() != piece.get_color():
+                return True
+            else:
+                break
+
+        # PAWN
+        if self.board[rank][file].get_color() == "black":
+            if rank > 0:
+                if file - 1 >= 0:
+                    if self.board[rank - 1][file - 1].get_color() == "white" and isinstance(self.board[rank - 1][file - 1], Pawn.Pawn):
+                        return True
+                if file + 1 <= 7:
+                    if self.board[rank - 1][file + 1].get_color() == "white" and isinstance(self.board[rank - 1][file + 1], Pawn.Pawn):
+                        return True
+        else:
+            if rank < 7:
+                if file - 1 >= 0:
+                    if self.board[rank + 1][file - 1].get_color() == "black" and isinstance(self.board[rank + 1][file - 1], Pawn.Pawn):
+                        return True
+                if file + 1 <= 7:
+                    if self.board[rank + 1][file + 1].get_color() == "black" and isinstance(self.board[rank + 1][file + 1], Pawn.Pawn):
+                        return True
+
+        # KNIGHT
+        if file + 2 <= 7:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file + 2], Knight.Knight) and self.board[rank + 1][file + 2].get_color() != piece.get_color():
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file + 2], Knight.Knight) and self.board[rank - 1][file + 2].get_color() != piece.get_color():
+                    return True
+        if file - 2 >= 0:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file - 2], Knight.Knight) and self.board[rank + 1][file - 2].get_color() != piece.get_color():
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file - 2], Knight.Knight) and self.board[rank - 1][file - 2].get_color() != piece.get_color():
+                    return True
+        if rank + 2 <= 7:
+            if file + 1 <= 7:
+                if isinstance(self.board[rank + 2][file + 1], Knight.Knight) and self.board[rank + 2][file + 1].get_color() != piece.get_color():
+                    return True
+            if file - 1 >= 0:
+                if isinstance(self.board[rank + 2][file - 1], Knight.Knight) and self.board[rank + 2][file - 1].get_color() != piece.get_color():
+                    return True
+        if rank - 2 >= 0:
+            if file + 1 <= 7:
+                if isinstance(self.board[rank - 2][file + 1], Knight.Knight) and self.board[rank - 2][file + 1].get_color() != piece.get_color():
+                    return True
+            if file - 1 >= 0:
+                if isinstance(self.board[rank - 2][file - 1], Knight.Knight) and self.board[rank - 2][file - 1].get_color() != piece.get_color():
+                    return True
+
+        # KING
+        if file + 1 <= 7:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file + 1], King.King) and self.board[rank + 1][file + 1].get_color() != piece.get_color():
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file + 1], King.King) and self.board[rank - 1][file + 1].get_color() != piece.get_color():
+                    return True
+        if file - 1 >= 0:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file - 1], King.King) and self.board[rank + 1][file - 1].get_color() != piece.get_color():
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file - 1], King.King) and self.board[rank - 1][file - 1].get_color() != piece.get_color():
+                    return True
+        if rank + 1 <= 7:
+            if isinstance(self.board[rank + 1][file], King.King) and self.board[rank + 1][file].get_color() != piece.get_color():
+                return True
+        if rank - 1 >= 0:
+            if isinstance(self.board[rank - 1][file], King.King) and self.board[rank - 1][file].get_color() != piece.get_color():
+                return True
+        if file + 1 <= 7:
+            if isinstance(self.board[rank][file + 1], King.King) and self.board[rank][file + 1].get_color() != piece.get_color():
+                return True
+        if file - 1 >= 0:
+            if isinstance(self.board[rank][file - 1], King.King) and self.board[rank][file - 1].get_color() != piece.get_color():
+                return True
+
         return False
 
     def undo_move(self, testing: bool = False) -> bool:
@@ -275,7 +427,7 @@ class GameState:
                 self.board[special_rank][special_file].set_rank(special_rank)
                 self.board[special_rank][special_file].set_file(special_file)
                 self.board[special_rank][special_file].undo_last_move()
-            if last_move.get_move_type() == 'e':
+            elif last_move.get_move_type() == 'e':
                 special_piece = last_move.get_extra_piece()
 
                 self.board[special_piece.get_rank()][special_piece.get_file()] = special_piece
@@ -299,7 +451,8 @@ class GameState:
             self.make_move(false_move, True)
 
             if self.in_check(active):
-                legal_moves_list.pop(i)
+                del legal_moves_list[i]
+                # legal_moves_list.pop(i)
             self.undo_move(True)
         return legal_moves_list
 
@@ -336,13 +489,169 @@ class GameState:
             return False
 
     def is_pos_under_attack(self, opponent_color: str, pos: tuple) -> bool:
-        for rank in self.board:
-            for piece in rank:
-                if piece.get_color() == opponent_color:
-                    legal_moves = moves.legal_moves(piece, self.board)
-                    for legal_move in legal_moves:
-                        if legal_move[-3:-1] == (str(pos[0]) + str(pos[1])):
-                            return True
+        rank, file = pos
+
+        # DIAGONAL
+        for i in range(rank + 1, 8):
+            if file + (i - rank) <= 7:
+                if isinstance(self.board[i][file + (i - rank)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file + (i - rank)], Queen.Queen) or isinstance(
+                        self.board[i][file + (i - rank)], Bishop.Bishop)) and self.board[i][
+                    file + (i - rank)].get_color() == opponent_color:
+                    return True
+                else:
+                    break
+
+        for i in range(rank + 1, 8):
+            if file - (i - rank) >= 0:
+                if isinstance(self.board[i][file - (i - rank)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file - (i - rank)], Queen.Queen) or isinstance(
+                        self.board[i][file - (i - rank)], Bishop.Bishop)) and self.board[i][
+                    file - (i - rank)].get_color() == opponent_color:
+                    return True
+                else:
+                    break
+
+        for i in range(rank - 1, -1, -1):
+            if file + (rank - i) <= 7:
+                if isinstance(self.board[i][file + (rank - i)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file + (rank - i)], Queen.Queen) or isinstance(
+                        self.board[i][file + (rank - i)], Bishop.Bishop)) and self.board[i][
+                    file + (rank - i)].get_color() == opponent_color:
+                    return True
+                else:
+                    break
+
+        for i in range(rank - 1, -1, -1):
+            if file - (rank - i) >= 0:
+                if isinstance(self.board[i][file - (rank - i)], WhiteSpace.WhiteSpace):
+                    continue
+                elif (isinstance(self.board[i][file - (rank - i)], Queen.Queen) or isinstance(
+                        self.board[i][file - (rank - i)], Bishop.Bishop)) and self.board[i][
+                    file - (rank - i)].get_color() == opponent_color:
+                    return True
+                else:
+                    break
+
+        # STRAIGHT
+        for i in range(rank + 1, 8):
+            if isinstance(self.board[i][file], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[i][file], Queen.Queen) or isinstance(self.board[i][file], Rook.Rook)) and \
+                    self.board[i][file].get_color() == opponent_color:
+                return True
+            else:
+                break
+
+        for i in range(rank - 1, -1, -1):
+            if isinstance(self.board[i][file], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[i][file], Queen.Queen) or isinstance(self.board[i][file], Rook.Rook)) and \
+                    self.board[i][file].get_color() == opponent_color:
+                return True
+            else:
+                break
+
+        for i in range(file + 1, 8):
+            if isinstance(self.board[rank][i], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[rank][i], Queen.Queen) or isinstance(self.board[rank][i], Rook.Rook)) and \
+                    self.board[rank][i].get_color() == opponent_color:
+                return True
+            else:
+                break
+
+        for i in range(file - 1, -1, -1):
+            if isinstance(self.board[rank][i], WhiteSpace.WhiteSpace):
+                continue
+            elif (isinstance(self.board[rank][i], Queen.Queen) or isinstance(self.board[rank][i], Rook.Rook)) and \
+                    self.board[rank][i].get_color() == opponent_color:
+                return True
+            else:
+                break
+
+        # PAWN
+        # if self.board[rank][file].get_color() == "black":
+        #     if rank > 0:
+        #         if file - 1 >= 0:
+        #             if self.board[rank - 1][file - 1].get_color() == "white" and isinstance(
+        #                     self.board[rank - 1][file - 1], Pawn.Pawn):
+        #                 return True
+        #         if file + 1 <= 7:
+        #             if self.board[rank - 1][file + 1].get_color() == "white" and isinstance(
+        #                     self.board[rank - 1][file + 1], Pawn.Pawn):
+        #                 return True
+        # else:
+        #     if rank < 7:
+        #         if file - 1 >= 0:
+        #             if self.board[rank + 1][file - 1].get_color() == "black" and isinstance(
+        #                     self.board[rank + 1][file - 1], Pawn.Pawn):
+        #                 return True
+        #         if file + 1 <= 7:
+        #             if self.board[rank + 1][file + 1].get_color() == "black" and isinstance(
+        #                     self.board[rank + 1][file + 1], Pawn.Pawn):
+        #                 return True
+
+        # KNIGHT
+        if file + 2 <= 7:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file + 2], Knight.Knight) and self.board[rank + 1][file + 2].get_color() == opponent_color:
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file + 2], Knight.Knight) and self.board[rank - 1][file + 2].get_color() == opponent_color:
+                    return True
+        if file - 2 >= 0:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file - 2], Knight.Knight) and self.board[rank + 1][file - 2].get_color() == opponent_color:
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file - 2], Knight.Knight) and self.board[rank - 1][file - 2].get_color() == opponent_color:
+                    return True
+        if rank + 2 <= 7:
+            if file + 1 <= 7:
+                if isinstance(self.board[rank + 2][file + 1], Knight.Knight) and self.board[rank + 2][file + 1].get_color() == opponent_color:
+                    return True
+            if file - 1 >= 0:
+                if isinstance(self.board[rank + 2][file - 1], Knight.Knight) and self.board[rank + 2][file - 1].get_color() == opponent_color:
+                    return True
+        if rank - 2 >= 0:
+            if file + 1 <= 7:
+                if isinstance(self.board[rank - 2][file + 1], Knight.Knight) and self.board[rank - 2][file + 1].get_color() == opponent_color:
+                    return True
+            if file - 1 >= 0:
+                if isinstance(self.board[rank - 2][file - 1], Knight.Knight) and self.board[rank - 2][file - 1].get_color() == opponent_color:
+                    return True
+
+        # KING
+        if file + 1 <= 7:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file + 1], King.King) and self.board[rank + 1][file + 1].get_color() == opponent_color:
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file + 1], King.King) and self.board[rank - 1][file + 1].get_color() == opponent_color:
+                    return True
+        if file - 1 >= 0:
+            if rank + 1 <= 7:
+                if isinstance(self.board[rank + 1][file - 1], King.King) and self.board[rank + 1][file - 1].get_color() == opponent_color:
+                    return True
+            if rank - 1 >= 0:
+                if isinstance(self.board[rank - 1][file - 1], King.King) and self.board[rank - 1][file - 1].get_color() == opponent_color:
+                    return True
+        if rank + 1 <= 7:
+            if isinstance(self.board[rank + 1][file], King.King) and self.board[rank + 1][file].get_color() == opponent_color:
+                return True
+        if rank - 1 >= 0:
+            if isinstance(self.board[rank - 1][file], King.King) and self.board[rank - 1][file].get_color() == opponent_color:
+                return True
+        if file + 1 <= 7:
+            if isinstance(self.board[rank][file + 1], King.King) and self.board[rank][file + 1].get_color() == opponent_color:
+                return True
+        if file - 1 >= 0:
+            if isinstance(self.board[rank][file - 1], King.King) and self.board[rank][file - 1].get_color() == opponent_color:
+                return True
         return False
 
     def special_moves(self, piece: Piece) -> list:

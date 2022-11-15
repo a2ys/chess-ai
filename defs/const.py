@@ -3,6 +3,7 @@ import defs.ChessErrors
 
 initial_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
 # initial_board = "k7/6p1/8/q4P1K/8/8/8/8 b KQkq - 0 1"
+# initial_board = "rnbqkbnr/pp3ppp/2pp4/3Pp3/4P3/8/PPP2PPP/RNBQKBNR w KQkq - 0 1"
 
 
 # Pre-defined game constraints
@@ -11,9 +12,9 @@ DIMENSION = 8
 SQ_SIZE = HEIGHT // DIMENSION
 MAX_FPS = 60
 IMAGES = {}
-PIECE_VALUES = {'K': 10000, 'Q': 900, 'R': 450, 'B': 350, 'N': 150, 'P': 100}
+PIECE_VALUES = {'K': 20000, 'Q': 900, 'R': 500, 'B': 330, 'N': 320, 'P': 100}
 CHECKMATE = 100000
-STALEMATE = 0
+STALEMATE = -100000
 DEPTH = 2
 
 # Colors format - [LIGHT, DARK]
