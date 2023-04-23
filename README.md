@@ -14,13 +14,13 @@ This is a Chess AI currently at the end of development. **It is written complete
 
 [Clone the repository](https://github.com/git-guides/git-clone) in your favorable location on your local machine. The following command does the magic for you:
 
-```
+```bash
 git clone https://github.com/a2ys/chess-ai.git
 ```
 
 Even though the program uses a single library, `Pygame`, going by the [Python conventions](https://docs.python.org/3/tutorial/venv.html#:~:text=A%20common%20convention%20is%20to%20put%20this%20list%20in%20a%20requirements.txt%20file) is always recommended. So in the main program directory, run the following command:
 
-```
+```bash
 python -m pip install -r requirements.txt
 ```
 This command will install the required libraries for you.
@@ -30,6 +30,69 @@ Now you just have to run the `main.py` file, and enjoy the program. The followin
 ```
 python main.py
 ```
+
+## How to use and configure?
+
+As of now, no settings screen has been developed, so to use the program as you intend, you need to change the code. Most of the settings and their values are stored in the [`Constants.py`](https://github.com/a2ys/chess-ai/blob/master/defs/Constants.py) file. So to make a change, you need to first go the file, in the location `defs\Constants.py` and changes the values of the constants as needed. Some instructions are provided below.
+
+### Game modes
+
+The Game Mode, by default, is set to AI vs AI. In case you want to change it to another mode, you must do it in the following way:
+
+- First of all, go the `Constants.py` file, and search for the variable, `GAME_MODE`.
+- The `GAME_MODE` variable is responsible for different modes of playing the game, the values it can take are `GameModes.PLAYER_VS_PLAYER`, `GameModes.PLAYER_VS_AI` (you play as white, and the computer plays as black), `GameModes.AI_VS_PLAYER` (you play as black, and the computer plays as white) and `GameModes.AI_VS_AI` (default). The values are self-explanatory.
+
+### Initial board arrangement
+
+The initial board in the game, by default, is set to the standard initial board. To be able to edit the initial board arrangement, you must be familiar with the [FEN notation](https://www.chess.com/terms/fen-chess) in chess. In case you are familiar, and want to change the inital arrangement, you must do it in the following way:
+
+- First of all, go to the `Constants.py` file, and search for the variable `initial_board`, which will be found in the beginning of the Python file.
+- After getting to the variable, set it to the board arrangement of your choice.
+
+### Depth of the AI
+
+The depth to which the AI can think, by default, is set to 2, which is sufficient for most cases. In case you want to increase or decrease the depth, you must do it in the following way:
+
+- First of all, go the `Constants.py` file, and search for the variable, `DEPTH`.
+- A depth of `n` means the AI looks `n` moves in the future. The time-complexity of the move searching algorithm (negamax with alpha-beta pruning) is $O(b^{n/2})$ in most cases, and the space-complexity of the same algorithm is $O(bn)$; where b is the number of legal moves available in a position.
+- So changing the `DEPTH` with change the number of moves the AI will look forward. Change this variable accoring to the processing power of your machine's processor, or just leave it unchanged.
+
+### Colors
+
+The Colors, by default, are set according to a visually pleasing and less noisy palette, so unless you crave for certain colors, you should leave them unchanged. In case you want to change the colors, you must do it in the following way:
+
+- First of all, go the `Constants.py` file, and search for the following block of code somewhere in the middle:
+
+    ```python
+    # Colors format - [LIGHT, DARK]
+    colors = [(238, 216, 192), (171, 122, 101)]
+    highlight_colors = [(207, 172, 106), (197, 173, 96)]
+    legal_move_colors = [(221, 89, 89), (197, 68, 79)]
+    ```
+- All the colors are in `RGB` format, in the order `(R, G, B)`, and the first `tuple` in every `list` of colors denotes the color applied to the white square, and the next one denotes the color applied to the black square.
+- The instructions below provide the steps to alter the colors correctly:
+    - To change the color of the squares when the board is in `idle` state, change the values in the `colors` variable;
+    - To change the color of the square of a piece which is clicked upon by the user, change the values in the `highlight_colors` variable;
+    - To change the colors with which the `legal_move` squares are filled, change the values in the `legal_move_colors`.
+
+### Dimensions and FPS
+
+The `WIDTH`, `HEIGHT` and `FPS` variables are not recommended to be changed, so as to provide a seamless experience, but in case you want to change them, you must do it in the following way:
+
+- First of all, go the `Constants.py` file, and find these lines:
+
+    ```python
+    WIDTH = HEIGHT = 720
+    FPS = 60
+    ```
+- Change the values of `WIDTH` and `HEIGHT` variables, keeping both equal to each other, and a multiple of `8`, to avoid any visual inconsistency.
+- Change the FPS to any value supported by your display.
+
+### Final notes on usage and configuration
+
+All the other variables/functions in the `Constants.py` file or any other file not mentioned above are not supposed to be edited, and are important in providing necessary functionality to the program. If you want to experiment with the program or make changes for contributions, you are free to do so with a threshold amouunt of knowledge in Python and about the project, which is provided in comments with every block of code.
+
+If you need further assistance with configuration, or any other topic related to this project, you can [create an issue](https://github.com/a2ys/chess-ai/issues/new/choose), or can also mail me at [oreus@duck.com](mailto:oreus@duck.com). Happy experimenting. :)
 
 ## Libraries in use
 
@@ -47,11 +110,11 @@ Pygame provides the necessary working GUI for the program, and connects it to th
   > The program extensively uses hashing and rapid storage and access of information from the machine's primary memory, so it is recommended to have a  **DDR4** memory to have a hassle-free experience.
 - Permanent storage: Any storage type (SSD recommended)
 
-## Contributing
+## Willing to contribute?
 
-If you are willing to add functionality to the program, you should [fork the repository](https://docs.github.com/en/get-started/quickstart/fork-a-repo) and make your desired changes. Then you should [create a pull request](https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests) to allow to merge your changes in the main branch.
+If you are willing to add functionality to the program, you should [fork the repository](https://github.com/a2ys/chess-ai/fork) and make your desired changes. Then you should [create a pull request](https://github.com/a2ys/chess-ai/compare) to allow to merge your changes in the main branch.
 
-Alternatively, if you find a bug/issue in the program, you can [create an issue](https://docs.github.com/en/issues/tracking-your-work-with-issues/about-issues), and wait for it to be fixed.
+Alternatively, if you find a bug/issue in the program, you can [create an issue](https://github.com/a2ys/chess-ai/issues/new/choose), and wait for it to be fixed.
 
 Your contributions are wholeheartedly welcome.
 
