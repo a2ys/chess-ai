@@ -40,8 +40,10 @@ Pygame provides the necessary working GUI for the program, and connects it to th
 
 - OS: Any operating system with Python 3.x and the required libraries installed.
 - Processor: Any **dual-core** processor.
+
   > The program makes an extensive use of your machine's processing power, so it is recommended to use a **quad-core** processor, for a seamless experience, even though the minimum requirement is **dual-core**.
 - RAM: At least 2GB or above, DDR3 or above
+
   > The program extensively uses hashing and rapid storage and access of information from the machine's primary memory, so it is recommended to have a  **DDR4** memory to have a hassle-free experience.
 - Permanent storage: Any storage type (SSD recommended)
 
