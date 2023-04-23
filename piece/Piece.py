@@ -1,8 +1,10 @@
 # This is a piece class. Every piece inherits from this class.
 # Every piece is initialized with a Rank, File and Color. There are getters and setters for every defined value, and a defined method to print all information in a structural manner.
+from defs.enums.Colors import Color
+
 
 class Piece:
-    def __init__(self, rank: int, file: int, color: str) -> None:
+    def __init__(self, rank: int, file: int, color: Color) -> None:
         self.rank = rank
         self.file = file
         self.color = color
@@ -21,10 +23,10 @@ class Piece:
     def set_file(self, file: int) -> None:
         self.file = file
 
-    def get_color(self) -> str:
+    def get_color(self) -> Color:
         return self.color
 
-    def set_color(self, color: str) -> None:
+    def set_color(self, color: Color) -> None:
         self.color = color
 
     def get_moved(self) -> bool:
