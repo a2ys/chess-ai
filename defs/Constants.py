@@ -1,8 +1,8 @@
 from defs.enums.GameModes import GameModes
 from defs.enums.Colors import Color
 
-# initial_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
-initial_board = "k7/6p1/8/q4P1K/8/8/8/8 b KQkq - 0 1"
+initial_board = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"
+# initial_board = "k7/6p1/8/q4P1K/8/8/8/8 b KQkq - 0 1"
 
 # Pre-defined game constraints
 WIDTH = HEIGHT = 720
