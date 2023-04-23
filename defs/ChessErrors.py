@@ -6,8 +6,10 @@ class ChessErrors(Exception):
 class InvalidFenError(ChessErrors):
     """Exception raised for invalid FEN strings.
 
-    Attributes:
-        message -- explanation of the error
+    Attributes
+    ----------
+        message : str
+            explanation of the error
     """
 
     def __init__(self, message: str) -> None:
@@ -17,8 +19,10 @@ class InvalidFenError(ChessErrors):
 class InvalidColorError(ChessErrors):
     """Exception raised for invalid color string.
 
-    Attributes:
-        message -- explanation of the error
+    Attributes
+    ----------
+        message : str
+            explanation of the error
     """
 
     def __init__(self, message: str) -> None:
@@ -28,8 +32,10 @@ class InvalidColorError(ChessErrors):
 class NoKingError(ChessErrors):
     """Exception raised for no king in the FEN string.
 
-    Attributes:
-        message -- explanation of the error
+    Attributes
+    ----------
+        message : str
+            explanation of the error
     """
 
     def __init__(self, message: str) -> None:
@@ -39,8 +45,10 @@ class NoKingError(ChessErrors):
 class KingCapturedError(ChessErrors):
     """Exception raised when king captured.
 
-    Attributes:
-        message -- explanation of the error
+    Attributes
+    ----------
+        message : str
+            explanation of the error
     """
 
     def __init__(self, message: str) -> None:
@@ -48,10 +56,25 @@ class KingCapturedError(ChessErrors):
 
 
 class InvalidMoveIdentifier(ChessErrors):
-    """Exception raised when an invalid move identifier is given to the const.spl_move_identifier method.
+    """Exception raised when an invalid move identifier is given to the GameState.make_move() method.
 
-        Attributes:
-            message -- explanation of the error
+        Attributes
+        ----------
+            message : str
+                explanation of the error
+        """
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+
+
+class InvalidGameModeError(ChessErrors):
+    """Exception raised when an invalid GameMode is provided to Constants.GAME_MODE variable.
+
+        Attributes
+    ----------
+        message : str
+          explanation of the error
         """
 
     def __init__(self, message: str) -> None:
