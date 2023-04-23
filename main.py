@@ -2,16 +2,18 @@ import sys
 import pygame
 
 import ai
-import move
-import moves
-from defs.const import *
-from piece import WhiteSpace
 import board
+import move
+import move_generator
+from defs.Constants import *
+from defs.enums.GameModes import GameModes
+from defs import ChessErrors
+from piece import WhiteSpace
 
 
 # This function loads the images to the app on runtime.
 def load_images() -> None:
-    pieces = ['wp', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bp', 'bR', 'bN', 'bB', 'bQ', 'bK']
+    pieces = ['wP', 'wR', 'wN', 'wB', 'wQ', 'wK', 'bP', 'bR', 'bN', 'bB', 'bQ', 'bK']
     for piece in pieces:
         IMAGES[piece] = pygame.image.load('assets/images/' + piece + '.png')
         IMAGES[piece] = pygame.transform.smoothscale(IMAGES[piece], (SQ_SIZE, SQ_SIZE))
@@ -36,7 +38,8 @@ def draw_pieces(screen: pygame.display, arg_board: list) -> None:
         for j in range(DIMENSION):
             piece = arg_board[i][j]
             if piece.get_alpha() != '--':
-                screen.blit(IMAGES[piece.get_alpha()], pygame.Rect(j * SQ_SIZE, i * SQ_SIZE, SQ_SIZE, SQ_SIZE))
+                screen.blit(IMAGES[get_color_alpha(piece.get_color()) + piece.get_alpha().upper()],
+                            pygame.Rect(j * SQ_SIZE, i * SQ_SIZE, SQ_SIZE, SQ_SIZE))
 
 
 # This function integrates draw_squares() method and draw_pieces() method as a single function.
@@ -61,19 +64,20 @@ class Main:
         square_selected = ()
         player_clicks = []
 
-        while True:
-            # TODO - Make valid return a tuple[bool, bool] and optimize this piece of code.
-            if self.gs.is_checkmate(self.gs.active_player()):
-                print(f"{self.gs.active_player()} has been checkmated!")
-                return 0
-
-            if not self.gs.white_to_move:
-                ai.make_move(self.gs)
-            for event in pygame.event.get():
-                if event.type == pygame.QUIT:
+        if GAME_MODE == GameModes.PLAYER_VS_PLAYER:
+            while True:
+                if self.gs.is_checkmate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been checkmated!")
                     return 0
-                elif event.type == pygame.MOUSEBUTTONDOWN:
-                    if self.gs.white_to_move:
+
+                if self.gs.is_stalemate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been stalemated!")
+                    return 0
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return 0
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
                         pos = pygame.mouse.get_pos()  # (x, y) location of mouse click
 
                         # Chess Definitions:
@@ -90,12 +94,14 @@ class Main:
                             player_clicks = []
                             reset_colors()
                         elif len(player_clicks) == 0:
-                            if isinstance(self.gs.board[rank][file], WhiteSpace.WhiteSpace):  # If the selected square is empty, do not select it.
+                            if isinstance(self.gs.board[rank][file],
+                                          WhiteSpace.WhiteSpace):  # If the selected square is empty, do not select it.
                                 square_selected = ()
                                 player_clicks = []
                                 reset_colors()
                             else:
-                                player_clicks.append((rank, file))
+                                square_selected = (rank, file)
+                                player_clicks.append(square_selected)
 
                                 if (rank + file) % 2 == 0:
                                     board_colors[rank][file] = highlight_colors[0]
@@ -103,12 +109,13 @@ class Main:
                                     board_colors[rank][file] = highlight_colors[1]
                                 # Highlight the legal moves of the selected piece.
                                 if self.gs.board[rank][file].get_color() == self.gs.active_player():
-                                    pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                    lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
+                                    pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                    self.gs.board)
+                                    lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                        self.gs.special_moves(self.gs.board[rank][file]))
                                     for i in lgl_moves:
-                                        moves_to_position = get_move_from_id(i)
-                                        target_rank = moves_to_position[1][0]
-                                        target_file = moves_to_position[1][1]
+                                        target_rank = i.end_rank
+                                        target_file = i.end_file
                                         if (target_rank + target_file) % 2 == 0:
                                             board_colors[target_rank][target_file] = legal_move_colors[0]
                                         else:
@@ -119,12 +126,13 @@ class Main:
 
                             # Highlight the legal moves of the selected piece.
                             if self.gs.board[rank][file].get_color() == self.gs.active_player():
-                                pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
+                                pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                self.gs.board)
+                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                    self.gs.special_moves(self.gs.board[rank][file]))
                                 for i in lgl_moves:
-                                    moves_to_position = get_move_from_id(i)
-                                    target_rank = moves_to_position[1][0]
-                                    target_file = moves_to_position[1][1]
+                                    target_rank = i.end_rank
+                                    target_file = i.end_file
                                     if (target_rank + target_file) % 2 == 0:
                                         board_colors[target_rank][target_file] = legal_move_colors[0]
                                     else:
@@ -146,7 +154,6 @@ class Main:
                             if valid:
                                 player_clicks = []
                                 square_selected = ()
-
                                 reset_colors()
                             else:
                                 player_clicks = [square_selected]
@@ -158,41 +165,386 @@ class Main:
                                 if self.gs.board[final_rank][final_file].get_alpha() != '--':
                                     if (final_rank + final_file) % 2 == 0:
                                         board_colors[final_rank][final_file] = highlight_colors[0]
+
+                                        # Highlight the legal moves of the selected piece.
+                                        if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                            pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                            self.gs.board)
+                                            lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                self.gs.special_moves(self.gs.board[rank][file]))
+                                            for i in lgl_moves:
+                                                target_rank = i.end_rank
+                                                target_file = i.end_file
+                                                if (target_rank + target_file) % 2 == 0:
+                                                    board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                else:
+                                                    board_colors[target_rank][target_file] = legal_move_colors[1]
                                     else:
                                         board_colors[final_rank][final_file] = highlight_colors[1]
-                                    # Highlight the legal moves of the selected piece.
-                                    if self.gs.board[final_rank][final_file].get_color() == self.gs.active_player():
-                                        pseudo_legal_moves = moves.legal_moves(self.gs.board[rank][file], self.gs.board)
-                                        lgl_moves = self.gs.legal_moves(pseudo_legal_moves) + self.gs.special_moves(self.gs.board[rank][file])
-                                        for i in lgl_moves:
-                                            moves_to_position = get_move_from_id(i)
-                                            target_rank = moves_to_position[1][0]
-                                            target_file = moves_to_position[1][1]
-                                            if (target_rank + target_file) % 2 == 0:
-                                                board_colors[target_rank][target_file] = legal_move_colors[0]
-                                            else:
-                                                board_colors[target_rank][target_file] = legal_move_colors[1]
-                                    else:
-                                        reset_colors()
+
+                                        # Highlight the legal moves of the selected piece.
+                                        if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                            pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                            self.gs.board)
+                                            lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                self.gs.special_moves(self.gs.board[rank][file]))
+                                            for i in lgl_moves:
+                                                target_rank = i.end_rank
+                                                target_file = i.end_file
+                                                if (target_rank + target_file) % 2 == 0:
+                                                    board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                else:
+                                                    board_colors[target_rank][target_file] = legal_move_colors[1]
+                                        else:
+                                            reset_colors()
                                 else:
                                     if (final_rank + final_file) % 2 == 0:
                                         board_colors[final_rank][final_file] = colors[0]
                                     else:
                                         board_colors[final_rank][final_file] = colors[1]
-                elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_z:
-                        self.gs.undo_move()
-                        square_selected = ()
-                        player_clicks = []
-                        self.undo = True
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_z:
+                            self.gs.undo_move()
+                            square_selected = ()
+                            player_clicks = []
+                            self.undo = True
 
-            if self.undo:
-                reset_colors()
-                self.undo = False
+                if self.undo:
+                    reset_colors()
+                    self.undo = False
 
-            draw_game_state(self.screen, self.gs)
-            pygame.display.update()
-            self.clock.tick(MAX_FPS)
+                draw_game_state(self.screen, self.gs)
+                pygame.display.update()
+                self.clock.tick(MAX_FPS)
+        elif GAME_MODE == GameModes.PLAYER_VS_AI:
+            while True:
+                if self.gs.is_checkmate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been checkmated!")
+                    return 0
+
+                if self.gs.is_stalemate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been stalemated!")
+                    return 0
+
+                if not self.gs.white_to_move:
+                    ai.make_move(self.gs)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return 0
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if self.gs.white_to_move:
+                            pos = pygame.mouse.get_pos()  # (x, y) location of mouse click
+
+                            # Chess Definitions:
+                            # Rank: The horizontal grid of squares is called the rank. The first rank is
+                            # the bottommost rank. Here in the program, the y-position of the mouse click is the rank.
+                            # File: The vertical grid of squares is called the file. The first file is the leftmost file.
+                            # Here in the program, the x-position of the mouse click is the file.
+
+                            file = pos[0] // SQ_SIZE
+                            rank = pos[1] // SQ_SIZE
+
+                            if square_selected == (rank, file):
+                                square_selected = ()
+                                player_clicks = []
+                                reset_colors()
+                            elif len(player_clicks) == 0:
+                                if isinstance(self.gs.board[rank][file],
+                                              WhiteSpace.WhiteSpace):  # If the selected square is empty, do not select it.
+                                    square_selected = ()
+                                    player_clicks = []
+                                    reset_colors()
+                                else:
+                                    square_selected = (rank, file)
+                                    player_clicks.append(square_selected)
+
+                                    if (rank + file) % 2 == 0:
+                                        board_colors[rank][file] = highlight_colors[0]
+                                    else:
+                                        board_colors[rank][file] = highlight_colors[1]
+                                    # Highlight the legal moves of the selected piece.
+                                    if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                        pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                        self.gs.board)
+                                        lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                            self.gs.special_moves(self.gs.board[rank][file]))
+                                        for i in lgl_moves:
+                                            target_rank = i.end_rank
+                                            target_file = i.end_file
+                                            if (target_rank + target_file) % 2 == 0:
+                                                board_colors[target_rank][target_file] = legal_move_colors[0]
+                                            else:
+                                                board_colors[target_rank][target_file] = legal_move_colors[1]
+                            else:
+                                square_selected = (rank, file)
+                                player_clicks.append(square_selected)
+
+                                # Highlight the legal moves of the selected piece.
+                                if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                    pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                    self.gs.board)
+                                    lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                        self.gs.special_moves(self.gs.board[rank][file]))
+                                    for i in lgl_moves:
+                                        target_rank = i.end_rank
+                                        target_file = i.end_file
+                                        if (target_rank + target_file) % 2 == 0:
+                                            board_colors[target_rank][target_file] = legal_move_colors[0]
+                                        else:
+                                            board_colors[target_rank][target_file] = legal_move_colors[1]
+                                else:
+                                    reset_colors()
+
+                            if len(player_clicks) == 2:  # If the user clicked on two distinct squares, check its validity and move the piece.
+                                m = move.Move(player_clicks[0], player_clicks[1], self.gs.board)
+                                valid = self.gs.make_move(m)
+
+                                initial_rank = player_clicks[0][0]
+                                initial_file = player_clicks[0][1]
+                                final_rank = player_clicks[1][0]
+                                final_file = player_clicks[1][1]
+
+                                # This is a quality-of-life feature to allow the user to move another piece if he/she had mistakenly selected a wrong piece.
+                                # The move will be reset when user clicks on a friendly piece, and the square on which he clicks will be treated as the first square.
+                                if valid:
+                                    player_clicks = []
+                                    square_selected = ()
+                                    reset_colors()
+                                else:
+                                    player_clicks = [square_selected]
+                                    reset_colors()
+                                    if (initial_rank + initial_file) % 2 == 0:
+                                        board_colors[initial_rank][initial_file] = colors[0]
+                                    else:
+                                        board_colors[initial_rank][initial_file] = colors[1]
+                                    if self.gs.board[final_rank][final_file].get_alpha() != '--':
+                                        if (final_rank + final_file) % 2 == 0:
+                                            board_colors[final_rank][final_file] = highlight_colors[0]
+
+                                            # Highlight the legal moves of the selected piece.
+                                            if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                                pseudo_legal_moves = move_generator.legal_moves(
+                                                    self.gs.board[rank][file], self.gs.board)
+                                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                    self.gs.special_moves(self.gs.board[rank][file]))
+                                                for i in lgl_moves:
+                                                    target_rank = i.end_rank
+                                                    target_file = i.end_file
+                                                    if (target_rank + target_file) % 2 == 0:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                    else:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[1]
+                                        else:
+                                            board_colors[final_rank][final_file] = highlight_colors[1]
+
+                                            # Highlight the legal moves of the selected piece.
+                                            if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                                pseudo_legal_moves = move_generator.legal_moves(
+                                                    self.gs.board[rank][file], self.gs.board)
+                                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                    self.gs.special_moves(self.gs.board[rank][file]))
+                                                for i in lgl_moves:
+                                                    target_rank = i.end_rank
+                                                    target_file = i.end_file
+                                                    if (target_rank + target_file) % 2 == 0:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                    else:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[1]
+                                            else:
+                                                reset_colors()
+                                    else:
+                                        if (final_rank + final_file) % 2 == 0:
+                                            board_colors[final_rank][final_file] = colors[0]
+                                        else:
+                                            board_colors[final_rank][final_file] = colors[1]
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_z:
+                            self.gs.undo_move()
+                            square_selected = ()
+                            player_clicks = []
+                            self.undo = True
+
+                if self.undo:
+                    reset_colors()
+                    self.undo = False
+
+                draw_game_state(self.screen, self.gs)
+                pygame.display.update()
+                self.clock.tick(MAX_FPS)
+        elif GAME_MODE == GameModes.AI_VS_PLAYER:
+            while True:
+                if self.gs.is_checkmate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been checkmated!")
+                    return 0
+
+                if self.gs.is_stalemate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been stalemated!")
+                    return 0
+
+                if self.gs.white_to_move:
+                    ai.make_move(self.gs)
+
+                for event in pygame.event.get():
+                    if event.type == pygame.QUIT:
+                        return 0
+                    elif event.type == pygame.MOUSEBUTTONDOWN:
+                        if not self.gs.white_to_move:
+                            pos = pygame.mouse.get_pos()  # (x, y) location of mouse click
+
+                            # Chess Definitions:
+                            # Rank: The horizontal grid of squares is called the rank. The first rank is
+                            # the bottommost rank. Here in the program, the y-position of the mouse click is the rank.
+                            # File: The vertical grid of squares is called the file. The first file is the leftmost file.
+                            # Here in the program, the x-position of the mouse click is the file.
+
+                            file = pos[0] // SQ_SIZE
+                            rank = pos[1] // SQ_SIZE
+
+                            if square_selected == (rank, file):
+                                square_selected = ()
+                                player_clicks = []
+                                reset_colors()
+                            elif len(player_clicks) == 0:
+                                if isinstance(self.gs.board[rank][file],
+                                              WhiteSpace.WhiteSpace):  # If the selected square is empty, do not select it.
+                                    square_selected = ()
+                                    player_clicks = []
+                                    reset_colors()
+                                else:
+                                    square_selected = (rank, file)
+                                    player_clicks.append(square_selected)
+
+                                    if (rank + file) % 2 == 0:
+                                        board_colors[rank][file] = highlight_colors[0]
+                                    else:
+                                        board_colors[rank][file] = highlight_colors[1]
+                                    # Highlight the legal moves of the selected piece.
+                                    if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                        pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                        self.gs.board)
+                                        lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                            self.gs.special_moves(self.gs.board[rank][file]))
+                                        for i in lgl_moves:
+                                            target_rank = i.end_rank
+                                            target_file = i.end_file
+                                            if (target_rank + target_file) % 2 == 0:
+                                                board_colors[target_rank][target_file] = legal_move_colors[0]
+                                            else:
+                                                board_colors[target_rank][target_file] = legal_move_colors[1]
+                            else:
+                                square_selected = (rank, file)
+                                player_clicks.append(square_selected)
+
+                                # Highlight the legal moves of the selected piece.
+                                if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                    pseudo_legal_moves = move_generator.legal_moves(self.gs.board[rank][file],
+                                                                                    self.gs.board)
+                                    lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                        self.gs.special_moves(self.gs.board[rank][file]))
+                                    for i in lgl_moves:
+                                        target_rank = i.end_rank
+                                        target_file = i.end_file
+                                        if (target_rank + target_file) % 2 == 0:
+                                            board_colors[target_rank][target_file] = legal_move_colors[0]
+                                        else:
+                                            board_colors[target_rank][target_file] = legal_move_colors[1]
+                                else:
+                                    reset_colors()
+
+                            if len(player_clicks) == 2:  # If the user clicked on two distinct squares, check its validity and move the piece.
+                                m = move.Move(player_clicks[0], player_clicks[1], self.gs.board)
+                                valid = self.gs.make_move(m)
+
+                                initial_rank = player_clicks[0][0]
+                                initial_file = player_clicks[0][1]
+                                final_rank = player_clicks[1][0]
+                                final_file = player_clicks[1][1]
+
+                                # This is a quality-of-life feature to allow the user to move another piece if he/she had mistakenly selected a wrong piece.
+                                # The move will be reset when user clicks on a friendly piece, and the square on which he clicks will be treated as the first square.
+                                if valid:
+                                    player_clicks = []
+                                    square_selected = ()
+                                    reset_colors()
+                                else:
+                                    player_clicks = [square_selected]
+                                    reset_colors()
+                                    if (initial_rank + initial_file) % 2 == 0:
+                                        board_colors[initial_rank][initial_file] = colors[0]
+                                    else:
+                                        board_colors[initial_rank][initial_file] = colors[1]
+                                    if self.gs.board[final_rank][final_file].get_alpha() != '--':
+                                        if (final_rank + final_file) % 2 == 0:
+                                            board_colors[final_rank][final_file] = highlight_colors[0]
+
+                                            # Highlight the legal moves of the selected piece.
+                                            if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                                pseudo_legal_moves = move_generator.legal_moves(
+                                                    self.gs.board[rank][file], self.gs.board)
+                                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                    self.gs.special_moves(self.gs.board[rank][file]))
+                                                for i in lgl_moves:
+                                                    target_rank = i.end_rank
+                                                    target_file = i.end_file
+                                                    if (target_rank + target_file) % 2 == 0:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                    else:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[1]
+                                        else:
+                                            board_colors[final_rank][final_file] = highlight_colors[1]
+
+                                            # Highlight the legal moves of the selected piece.
+                                            if self.gs.board[rank][file].get_color() == self.gs.active_player():
+                                                pseudo_legal_moves = move_generator.legal_moves(
+                                                    self.gs.board[rank][file], self.gs.board)
+                                                lgl_moves = self.gs.legal_moves(pseudo_legal_moves).union(
+                                                    self.gs.special_moves(self.gs.board[rank][file]))
+                                                for i in lgl_moves:
+                                                    target_rank = i.end_rank
+                                                    target_file = i.end_file
+                                                    if (target_rank + target_file) % 2 == 0:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[0]
+                                                    else:
+                                                        board_colors[target_rank][target_file] = legal_move_colors[1]
+                                            else:
+                                                reset_colors()
+                                    else:
+                                        if (final_rank + final_file) % 2 == 0:
+                                            board_colors[final_rank][final_file] = colors[0]
+                                        else:
+                                            board_colors[final_rank][final_file] = colors[1]
+                    elif event.type == pygame.KEYDOWN:
+                        if event.key == pygame.K_z:
+                            self.gs.undo_move()
+                            square_selected = ()
+                            player_clicks = []
+                            self.undo = True
+
+                if self.undo:
+                    reset_colors()
+                    self.undo = False
+
+                draw_game_state(self.screen, self.gs)
+                pygame.display.update()
+                self.clock.tick(MAX_FPS)
+        elif GAME_MODE == GameModes.AI_VS_AI:
+            while True:
+                if self.gs.is_checkmate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been checkmated!")
+                    return 0
+
+                if self.gs.is_stalemate(self.gs.active_player()):
+                    print(f"{self.gs.active_player()} has been stalemated!")
+                    return 0
+
+                ai.make_move(self.gs)
+
+                draw_game_state(self.screen, self.gs)
+                pygame.display.update()
+                self.clock.tick(MAX_FPS)
+        else:
+            raise ChessErrors.InvalidGameModeError(invalid_game_mode_error)
 
 
 if __name__ == '__main__':
