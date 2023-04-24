@@ -4,6 +4,8 @@
 
 ![Issues](https://img.shields.io/github/issues/a2ys/chess-ai?style=for-the-badge) ![Forks](https://img.shields.io/github/forks/a2ys/chess-ai?style=for-the-badge) ![License](https://img.shields.io/github/license/a2ys/chess-ai?style=for-the-badge)
 
+![Buid Status](https://img.shields.io/github/actions/workflow/status/a2ys/chess-ai/python-app.yml?style=for-the-badge) ![Release](https://img.shields.io/github/v/release/a2ys/chess-ai?include_prereleases&style=for-the-badge) ![Size](https://img.shields.io/github/repo-size/a2ys/chess-ai?label=size&style=for-the-badge)
+
 </div>
 
 ## Description
