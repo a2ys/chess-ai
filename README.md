@@ -10,11 +10,14 @@
 
 ## Description
 
-This is a Chess AI currently in development. **It is written completely on Python, so it will be slower** than other AIs, but algorithms have been optimized wherever necessary and possible. It uses the [`Pygame`](pygame.org) library to provide the GUI and the media controls. FEN notations are supported upto castling, and future support is in development.
+This Chess AI is under development and built entirely with Python for a focus on readability and code clarity. Despite the inherent limitations of the language in performance speed when compared to compiled languages, the core algorithms have been meticulously optimized for maximum speed within Python's capabilities.
+
+The user interface and media controls are powered by the Pygame library, offering a user-friendly and customizable experience. The AI currently understands and utilizes FEN (Forsyth-Edwards Notation) for game state import and export, including castling using FEN support. Further support features are actively being developed.
 
 ## How to install
 
-[Clone the repository](https://github.com/git-guides/git-clone) in a favorable location of your choice on your local machine. The following command does the magic for you:
+To get started [Clone the repository](https://github.com/git-guides/git-clone) to a convenient location on your local machine. <br/>
+You can use the following command in your terminal:
 
 ```shell
 git clone https://github.com/a2ys/chess-ai.git
@@ -25,9 +28,9 @@ Even though the program uses a single library, `Pygame`, going by the [Python co
 ```shell
 python -m pip install -r requirements.txt
 ```
-This command will install the required libraries for you.
+This command will install the requisite libraries for you.
 
-Now you just have to run the `main.py` file, and enjoy the program. The following command does the magic for you:
+All set! Now let's bring this program to life. Run the `main.py` file using this command in your terminal:
 
 ```shell
 python main.py
@@ -35,7 +38,10 @@ python main.py
 
 ## How to use and configure?
 
-As of now, no settings screen has been developed, so to use the program as you intend, you need to change the code. Most of the settings and their values are stored in the [`Constants.py`](defs/Constants.py) file. So to make a change, you first need to go to the file in the location `defs\Constants.py` and change the values of the constants as required. Some instructions are provided below.
+While a dedicated settings screen is still under development, you can customize the program's behavior by editing the [`Constants.py`](defs/Constants.py) file.Here's how to make changes:<br/>
+
+1. **Locate the file**: Navigate to the `defs` folder within your project directory and open `Constants.py`. <br/>
+2. **Adjust settings**: The file contains comments explaining each setting and its current value. You can modify these values directly in the code.
 
 ### Game modes
 
