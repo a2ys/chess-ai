@@ -10,7 +10,7 @@
 
 ## Description
 
-This Chess AI is under development and built entirely with Python for a focus on readability and code clarity. Despite the limitations of the language in performance speed when compared to compiled languages, the core algorithms have been changed for maximum speed within Python's capabilities.
+This Chess AI is under development and built entirely with Python for a focus on readability and code clarity. Despite the limitations of the language in performance speed when compared to compiled languages, the core algorithms have been optimized for maximum speed within Python's capabilities.
 
 The user interface and media controls are powered by the Pygame library, offering a customizable experience. The AI currently understands and utilizes FEN (Forsyth-Edwards Notation) for game state import and export, including castling using FEN support. Further support features are actively being developed.
 
