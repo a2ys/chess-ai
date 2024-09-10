@@ -142,13 +142,12 @@ The program currently uses only one library, `Pygame`.
 If you'd like to make changes or contribute to the project, consider the following options:
 
 - **Fork the Repository:** [Fork the repository](https://github.com/a2ys/chess-ai/fork) to create a copy of it on your local machine which you can later modify. <br/>
--**Make Modifications:** Make your desired changes while following coding conventions and best practices. <br/>
-
--**Create a Pull Request:**  [Create a pull request](https://github.com/a2ys/chess-ai/compare) to propose your changes for review and potential inclusion in the main project. <br/>
+- **Make Modifications:** Make your desired changes while following coding conventions and best practices. <br/>
+- **Create a Pull Request:**  [Create a pull request](https://github.com/a2ys/chess-ai/compare) to propose your changes for review and potential inclusion in the main project. <br/>
 
 Your contributions are wholeheartedly welcome.
 
-If you need further assistance with configuration, or any other topic related to this project, you can [create an issue](https://github.com/a2ys/chess-ai/issues/new/choose), or mail me at [oreus@duck.com](mailto:oreus@duck.com). Happy experimenting. :)
+If you need further assistance with configuration, or any other topic related to this project, you can [create an issue](https://github.com/a2ys/chess-ai/issues/new/choose), or mail me at [oreus@duck.com](mailto:me@a2ys.dev). Happy experimenting. :)
 
 ## License
 
